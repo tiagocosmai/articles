@@ -10,4 +10,7 @@
 .article-body a { @apply underline; }
 .article-body strong { @apply font-bold; }
 .article-body table { @apply mb-4 w-full border-collapse text-left text-sm; }
-.article-body th, .article-body td { @apply border border-current/20 px-2 py-1 align-top; }
+.article-body th, .article-body td {
+  @apply border px-2 py-1 align-top;
+  border-color: color-mix(in srgb, currentColor 20%, transparent);
+}
