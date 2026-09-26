@@ -13,6 +13,7 @@ type ThemeMode = "dark" | "light";
 type ThemeContextValue = {
   mode: ThemeMode;
   toggle: () => void;
+  setMode: (mode: ThemeMode) => void;
 };
 
 const STORAGE_KEY = "articles-theme";
@@ -44,17 +45,25 @@ export function ThemeProvider({
 }: {
   children: ReactNode;
 }): JSX.Element {
-  const [mode, setMode] = useState<ThemeMode>(readTheme);
+  const [mode, setModeState] = useState<ThemeMode>(readTheme);
+
+  const setMode = useCallback((next: ThemeMode) => {
+    setModeState(next);
+    writeTheme(next);
+  }, []);
 
   const toggle = useCallback(() => {
-    setMode((current) => {
+    setModeState((current) => {
       const next = current === "dark" ? "light" : "dark";
       writeTheme(next);
       return next;
     });
   }, []);
 
-  const value = useMemo(() => ({ mode, toggle }), [mode, toggle]);
+  const value = useMemo(
+    () => ({ mode, toggle, setMode }),
+    [mode, toggle, setMode],
+  );
 
   return (
     <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>

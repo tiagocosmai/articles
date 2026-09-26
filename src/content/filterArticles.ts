@@ -1,6 +1,11 @@
 import type { Article, Locale } from "../types/content";
 
-export type ArticleFilters = { query: string; date: string; tags: string[] };
+export type ArticleFilters = {
+  query: string;
+  dateFrom: string;
+  dateTo: string;
+  tags: string[];
+};
 
 const DATE_LOCALES: Record<Locale, string> = {
   pt: "pt-BR",
@@ -25,7 +30,11 @@ export function filterArticles(
         }
       }
 
-      if (filters.date && article.date !== filters.date) {
+      if (filters.dateFrom && article.date < filters.dateFrom) {
+        return false;
+      }
+
+      if (filters.dateTo && article.date > filters.dateTo) {
         return false;
       }
 

@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { AppRoutes } from "../App";
@@ -45,10 +45,25 @@ describe("Article", () => {
     expect(
       screen.getByRole("heading", { name: "Flashcards" }),
     ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Voltar para o blog" })).toHaveAttribute(
+      "href",
+      "/",
+    );
+    expect(screen.getByRole("searchbox", { name: "Busca" })).toBeInTheDocument();
+    expect(screen.getByLabelText("De")).toBeInTheDocument();
+    expect(screen.getByLabelText("Até")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "#AI" })).toHaveAttribute(
       "href",
       "/?tag=AI",
     );
+    const articleTags = screen.getByRole("list", { name: "Tags do artigo" });
+    expect(within(articleTags).getByText("#AI")).toBeInTheDocument();
+    expect(within(articleTags).queryByRole("link")).not.toBeInTheDocument();
+    expect(
+      screen
+        .getByRole("heading", { name: "Flashcards" })
+        .compareDocumentPosition(articleTags) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
 
     const card = screen.getByText(FRONT).closest("button");
     expect(card).toHaveAttribute("aria-pressed", "false");

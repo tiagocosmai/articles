@@ -1,0 +1,44 @@
+{
+  "cards": [
+    {
+      "id": "continuous-learning",
+      "front": "Does continuous learning mean taking a course every week?",
+      "back": "No. It means keeping curiosity and updating the knowledge that supports decisions, without turning free time into an extension of the workday."
+    },
+    {
+      "id": "management-escape",
+      "front": "Does moving into management remove the need to learn?",
+      "back": "No. People who lead also have to follow changes in the work, understand the team, and decide in contexts that evolve."
+    },
+    {
+      "id": "ai-responsibility",
+      "front": "Does AI take responsibility for what it delivers?",
+      "back": "No. The tool can collaborate, but responsibility for the decision stays with people and with the organization."
+    },
+    {
+      "id": "using-ai",
+      "front": "What does learning to use AI include, besides writing good prompts?",
+      "back": "Giving context, recognizing limits, checking sources, protecting data, and spotting when a convincing answer is wrong. Also knowing when to solve something without it."
+    },
+    {
+      "id": "infinite-race",
+      "front": "Does keeping up with the profession require knowing every new tool?",
+      "back": "No. It requires solid fundamentals and criteria for choosing the next thing to learn, without living in permanent urgency."
+    },
+    {
+      "id": "useful-question",
+      "front": "Which question helps choose what to learn now?",
+      "back": "What do I need to learn now in order to do my work better and make more conscious decisions?"
+    },
+    {
+      "id": "slave-of-tech",
+      "front": "When would we be slaves to technology?",
+      "back": "If we accepted every novelty as an order, with no room to choose, question, or set limits."
+    },
+    {
+      "id": "who-grows",
+      "front": "Who is the professional who grows in this discussion?",
+      "back": "Not necessarily the one who uses more tools or studies more hours. It is the one who connects knowledge, context, and responsibility in order to create value."
+    }
+  ]
+}

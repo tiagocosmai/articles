@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { AppRoutes } from "../App";
@@ -44,10 +44,8 @@ describe("Home", () => {
     expect(
       screen.getByRole("link", { name: (name) => name.includes(PT_TITLE) }),
     ).toHaveAttribute("href", "/o-agente-secreto");
-    expect(screen.getByRole("link", { name: "Portfólio" })).toHaveAttribute(
-      "href",
-      "https://tiagocosmai.github.io/",
-    );
+    expect(screen.queryByRole("banner")).not.toBeInTheDocument();
+    expect(screen.queryByRole("contentinfo")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "#AI" })).toHaveAttribute(
       "aria-pressed",
       "false",
@@ -55,10 +53,22 @@ describe("Home", () => {
 
     const shell = screen.getByTestId("app-shell");
     expect(shell).toHaveAttribute("data-theme", "dark");
-    expect(shell).toHaveClass("min-h-screen", "bg-surface-dark", "text-white");
-    expect(screen.getByRole("main")).toHaveClass("max-w-3xl");
+    expect(shell).toHaveClass("min-h-full", "bg-surface-dark", "text-white");
+    expect(screen.getByRole("main")).toHaveClass("max-w-6xl");
 
-    await user.click(screen.getByTestId("lang-en"));
+    act(() => {
+      window.dispatchEvent(
+        new MessageEvent("message", {
+          origin: window.location.origin,
+          data: {
+            channel: "tiagocosmai-embed",
+            topic: "preferences",
+            locale: "en",
+            theme: "dark",
+          },
+        }),
+      );
+    });
 
     expect(screen.getByRole("heading", { name: EN_TITLE })).toBeInTheDocument();
 
@@ -68,7 +78,15 @@ describe("Home", () => {
     await user.clear(screen.getByLabelText("Search"));
     expect(screen.getByRole("heading", { name: EN_TITLE })).toBeInTheDocument();
 
-    fireEvent.change(screen.getByLabelText("Date"), {
+    fireEvent.change(screen.getByLabelText("From"), {
+      target: { value: "2026-10-01" },
+    });
+    expect(screen.getByText("No articles match.")).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("From"), {
+      target: { value: "" },
+    });
+    fireEvent.change(screen.getByLabelText("To"), {
       target: { value: "2026-09-01" },
     });
     expect(screen.getByText("No articles match.")).toBeInTheDocument();

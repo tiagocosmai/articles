@@ -1,0 +1,44 @@
+{
+  "cards": [
+    {
+      "id": "continuous-learning",
+      "front": "Aprender continuamente significa fazer um curso a cada semana?",
+      "back": "Não. Significa manter a curiosidade e atualizar os conhecimentos que sustentam as decisões, sem transformar o tempo livre em extensão da jornada."
+    },
+    {
+      "id": "management-escape",
+      "front": "Migrar para a gestão elimina a necessidade de aprender?",
+      "back": "Não. Quem lidera também precisa acompanhar mudanças no trabalho, compreender o time e decidir em contextos que evoluem."
+    },
+    {
+      "id": "ai-responsibility",
+      "front": "A IA assume a responsabilidade pelo que entrega?",
+      "back": "Não. A ferramenta pode colaborar, mas a responsabilidade pela decisão continua com as pessoas e com a organização."
+    },
+    {
+      "id": "using-ai",
+      "front": "O que inclui aprender a usar IA, além de escrever bons comandos?",
+      "back": "Dar contexto, reconhecer limites, conferir fontes, proteger dados e identificar quando uma resposta convincente está errada. Também saber quando resolver algo sem ela."
+    },
+    {
+      "id": "infinite-race",
+      "front": "Acompanhar a profissão exige conhecer cada ferramenta nova?",
+      "back": "Não. Exige fundamentos sólidos e critérios para escolher o próximo aprendizado, sem viver em urgência permanente."
+    },
+    {
+      "id": "useful-question",
+      "front": "Qual pergunta ajuda a escolher o que aprender agora?",
+      "back": "O que preciso aprender agora para fazer melhor meu trabalho e tomar decisões mais conscientes?"
+    },
+    {
+      "id": "slave-of-tech",
+      "front": "Quando seríamos escravos da tecnologia?",
+      "back": "Se aceitássemos toda novidade como uma ordem, sem poder escolher, questionar ou estabelecer limites."
+    },
+    {
+      "id": "who-grows",
+      "front": "Quem é o profissional que cresce nessa discussão?",
+      "back": "Não é necessariamente quem usa mais ferramentas ou estuda por mais horas. É quem relaciona conhecimento, contexto e responsabilidade para criar valor."
+    }
+  ]
+}

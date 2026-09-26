@@ -1,6 +1,36 @@
 {
   "articles": [
     {
+      "slug": "desenvolvedores-escravos-da-tecnologia-ia",
+      "date": "2026-09-26",
+      "tags": [
+        "InteligenciaArtificial",
+        "DesenvolvimentoDeSoftware",
+        "Tecnologia",
+        "Lideranca",
+        "Carreira",
+        "AprendizadoContinuo",
+        "AI"
+      ],
+      "locales": {
+        "pt": {
+          "title": "Desenvolvedores, analistas e DBAs: escravos da tecnologia na era da IA?",
+          "description": "Uma reflexão sobre a necessidade de continuar aprendendo em tecnologia, agora que a inteligência artificial participa cada vez mais do trabalho. Como acompanhar as mudanças sem transformar a carreira em uma corrida infinita?",
+          "markdown": "desenvolvedores-escravos-da-tecnologia-ia.pt.md"
+        },
+        "en": {
+          "title": "Developers, analysts, and DBAs: slaves to technology in the age of AI?",
+          "description": "A reflection on the need to keep learning in technology now that artificial intelligence takes a growing part in the work. How do you keep up with change without turning a career into an endless race?",
+          "markdown": "desenvolvedores-escravos-da-tecnologia-ia.en.md"
+        },
+        "es": {
+          "title": "Desarrolladores, analistas y DBAs: ¿esclavos de la tecnología en la era de la IA?",
+          "description": "Una reflexión sobre la necesidad de seguir aprendiendo en tecnología, ahora que la inteligencia artificial participa cada vez más del trabajo. ¿Cómo acompañar los cambios sin convertir la profesión en una carrera infinita?",
+          "markdown": "desenvolvedores-escravos-da-tecnologia-ia.es.md"
+        }
+      }
+    },
+    {
       "slug": "o-agente-secreto",
       "date": "2026-09-24",
       "tags": [
