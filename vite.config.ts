@@ -2,12 +2,12 @@
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vitest/config";
 
-export default defineConfig({
+export default defineConfig(({ command, isPreview }) => ({
   plugins: [react()],
-  base: "/",
+  base: command === "build" || isPreview ? "/articles/" : "/",
   test: {
     environment: "jsdom",
     globals: true,
     setupFiles: "./src/setupTests.ts",
   },
-});
+}));

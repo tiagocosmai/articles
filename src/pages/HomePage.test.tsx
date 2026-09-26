@@ -43,7 +43,7 @@ describe("Home", () => {
     expect(screen.getByText(PT_DESCRIPTION)).toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: (name) => name.includes(PT_TITLE) }),
-    ).toHaveAttribute("href", "/articles/o-agente-secreto");
+    ).toHaveAttribute("href", "/o-agente-secreto");
     expect(screen.getByRole("link", { name: "Portfólio" })).toHaveAttribute(
       "href",
       "https://tiagocosmai.github.io/",

@@ -13,7 +13,7 @@ export function ArticleCard({ article }: { article: Article }) {
 
   return (
     <Link
-      to={`/articles/${article.slug}`}
+      to={`/${article.slug}`}
       className={`block rounded-lg border ${border} px-4 py-4`}
     >
       <h2 className={`font-mono text-2xl leading-snug ${titleColor}`}>{title}</h2>
