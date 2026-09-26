@@ -2,13 +2,15 @@ import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ArticleFilters } from "../components/ArticleFilters";
 import { ArticleList } from "../components/ArticleList";
+import { BlogColumns } from "../components/BlogColumns";
 import { collectTags } from "../content/filterArticles";
 import type { LoadedContent } from "../types/content";
 
 export function HomePage({ content }: { content: LoadedContent }) {
   const [searchParams] = useSearchParams();
-  const [query, setQuery] = useState("");
-  const [date, setDate] = useState("");
+  const [query, setQuery] = useState(() => searchParams.get("q") ?? "");
+  const [dateFrom, setDateFrom] = useState(() => searchParams.get("from") ?? "");
+  const [dateTo, setDateTo] = useState(() => searchParams.get("to") ?? "");
   const [tags, setTags] = useState<string[]>(() => {
     const tag = searchParams.get("tag");
     return tag ? [tag] : [];
@@ -23,17 +25,26 @@ export function HomePage({ content }: { content: LoadedContent }) {
   }
 
   return (
-    <div className="flex flex-col gap-8">
-      <ArticleFilters
-        query={query}
-        date={date}
-        selectedTags={tags}
-        availableTags={collectTags(content.articles)}
-        onQueryChange={setQuery}
-        onDateChange={setDate}
-        onToggleTag={toggleTag}
-      />
-      <ArticleList articles={content.articles} filters={{ query, date, tags }} />
-    </div>
+    <BlogColumns
+      content={
+        <ArticleList
+          articles={content.articles}
+          filters={{ query, dateFrom, dateTo, tags }}
+        />
+      }
+      filters={
+        <ArticleFilters
+          query={query}
+          dateFrom={dateFrom}
+          dateTo={dateTo}
+          selectedTags={tags}
+          availableTags={collectTags(content.articles)}
+          onQueryChange={setQuery}
+          onDateFromChange={setDateFrom}
+          onDateToChange={setDateTo}
+          onToggleTag={toggleTag}
+        />
+      }
+    />
   );
 }

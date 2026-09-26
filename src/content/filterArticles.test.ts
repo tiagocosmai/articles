@@ -5,7 +5,12 @@ import {
   formatArticleDate,
 } from "./filterArticles";
 
-const emptyFilters = { query: "", date: "", tags: [] as string[] };
+const emptyFilters = {
+  query: "",
+  dateFrom: "",
+  dateTo: "",
+  tags: [] as string[],
+};
 
 function article(partial: {
   slug: string;
@@ -74,10 +79,32 @@ describe("filterArticles", () => {
     ).toEqual([b]);
   });
 
-  it('returns only b for date "2026-09-01"', () => {
+  it("keeps articles on or after dateFrom", () => {
     expect(
-      filterArticles(articles, "en", { ...emptyFilters, date: "2026-09-01" }),
+      filterArticles(articles, "en", {
+        ...emptyFilters,
+        dateFrom: "2026-09-10",
+      }),
+    ).toEqual([a]);
+  });
+
+  it("keeps articles on or before dateTo", () => {
+    expect(
+      filterArticles(articles, "en", {
+        ...emptyFilters,
+        dateTo: "2026-09-10",
+      }),
     ).toEqual([b]);
+  });
+
+  it("keeps articles inside an inclusive from/to range", () => {
+    expect(
+      filterArticles(articles, "en", {
+        ...emptyFilters,
+        dateFrom: "2026-09-01",
+        dateTo: "2026-09-24",
+      }),
+    ).toEqual([a, b]);
   });
 
   it("returns articles that have AI when tags is [AI]", () => {

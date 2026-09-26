@@ -11,7 +11,7 @@ export function NotFoundPage() {
       : "text-brand-light hover:underline";
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
       <h1 className="font-mono text-3xl leading-tight">{t("not_found_title")}</h1>
       <p>{t("not_found_body")}</p>
       <Link to="/" className={link}>
