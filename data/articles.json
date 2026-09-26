@@ -1,0 +1,36 @@
+{
+  "articles": [
+    {
+      "slug": "o-agente-secreto",
+      "date": "2026-09-24",
+      "tags": [
+        "InteligenciaArtificial",
+        "AgentesDeIA",
+        "Lideranca",
+        "Tecnologia",
+        "Governanca",
+        "DesenvolvimentoDeSoftware",
+        "TransformacaoDigital",
+        "AI",
+        "TechLeadership"
+      ],
+      "locales": {
+        "pt": {
+          "title": "O Agente Secreto: quem responde quando a IA começa a agir nas organizações?",
+          "description": "Quando a inteligência artificial deixa de responder e passa a agir, a autonomia pode ser delegada, mas a responsabilidade continua humana.",
+          "markdown": "o-agente-secreto.pt.md"
+        },
+        "en": {
+          "title": "The Secret Agent: who answers when AI starts acting inside organizations?",
+          "description": "When artificial intelligence stops only answering and starts acting, autonomy can be delegated, but accountability stays human.",
+          "markdown": "o-agente-secreto.en.md"
+        },
+        "es": {
+          "title": "El agente secreto: ¿quién responde cuando la IA empieza a actuar en las organizaciones?",
+          "description": "Cuando la inteligencia artificial deja de responder y empieza a actuar, la autonomía puede delegarse, pero la responsabilidad sigue siendo humana.",
+          "markdown": "o-agente-secreto.es.md"
+        }
+      }
+    }
+  ]
+}
