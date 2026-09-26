@@ -1,7 +1,10 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
-import App from "../App";
+import { AppRoutes } from "../App";
+import { loadCatalog } from "../content/loadCatalog";
+import { LocaleProvider } from "../context/LocaleContext";
+import { ThemeProvider } from "../context/ThemeContext";
 
 const PT_TITLE =
   "O Agente Secreto: quem responde quando a IA começa a agir nas organizações?";
@@ -25,7 +28,11 @@ describe("Home", () => {
 
     render(
       <MemoryRouter>
-        <App />
+        <LocaleProvider>
+          <ThemeProvider>
+            <AppRoutes content={loadCatalog()} />
+          </ThemeProvider>
+        </LocaleProvider>
       </MemoryRouter>,
     );
 
@@ -70,7 +77,11 @@ describe("Home", () => {
   it("starts with the tag from the search string selected", () => {
     render(
       <MemoryRouter initialEntries={["/?tag=Lideranca"]}>
-        <App />
+        <LocaleProvider>
+          <ThemeProvider>
+            <AppRoutes content={loadCatalog()} />
+          </ThemeProvider>
+        </LocaleProvider>
       </MemoryRouter>,
     );
 
