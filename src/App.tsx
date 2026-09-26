@@ -8,6 +8,7 @@ import { ThemeProvider, useTheme } from "./context/ThemeContext";
 import { ArticlePage } from "./pages/ArticlePage";
 import { HomePage } from "./pages/HomePage";
 import { NotFoundPage } from "./pages/NotFoundPage";
+import { routerBasename } from "./routing/basename";
 import type { LoadedContent } from "./types/content";
 
 function AppShell({ content }: { content: LoadedContent }) {
@@ -50,7 +51,7 @@ export default function App() {
   return (
     <ThemeProvider>
       <LocaleProvider>
-        <BrowserRouter>
+        <BrowserRouter basename={routerBasename(import.meta.env.BASE_URL)}>
           <AppRoutes content={content} />
         </BrowserRouter>
       </LocaleProvider>
