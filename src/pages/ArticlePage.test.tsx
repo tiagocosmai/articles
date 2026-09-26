@@ -36,7 +36,7 @@ describe("Article", () => {
 
   it("shows the markdown, flips a card, and opens the home tag filter", async () => {
     const user = userEvent.setup();
-    renderAt("/articles/o-agente-secreto");
+    renderAt("/o-agente-secreto");
 
     expect(
       screen.getByText("Autonomia pode ser delegada. Accountability não."),
@@ -70,7 +70,7 @@ describe("Article", () => {
   });
 
   it("shows not found for an unknown slug, with a link home", () => {
-    renderAt("/articles/missing");
+    renderAt("/missing");
 
     expect(
       screen.getByRole("heading", { name: "Artigo não encontrado" }),
@@ -96,7 +96,7 @@ describe("Article", () => {
     const markdown = { ...content.markdown };
     delete markdown["o-agente-secreto.pt.md"];
 
-    renderAt("/articles/o-agente-secreto", { ...content, markdown });
+    renderAt("/o-agente-secreto", { ...content, markdown });
 
     expect(
       screen.getByText("Este arquivo de idioma não está disponível."),
@@ -117,7 +117,7 @@ describe("Article", () => {
     const flashcards = { ...content.flashcards };
     delete flashcards["o-agente-secreto.pt.json"];
 
-    renderAt("/articles/o-agente-secreto", { ...content, flashcards });
+    renderAt("/o-agente-secreto", { ...content, flashcards });
 
     expect(
       screen.getByText("Este arquivo de idioma não está disponível."),

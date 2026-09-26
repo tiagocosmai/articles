@@ -27,10 +27,7 @@ function AppShell({ content }: { content: LoadedContent }) {
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8">
         <Routes>
           <Route path="/" element={<HomePage content={content} />} />
-          <Route
-            path="/articles/:slug"
-            element={<ArticlePage content={content} />}
-          />
+          <Route path="/:slug" element={<ArticlePage content={content} />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>
