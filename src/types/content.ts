@@ -21,3 +21,10 @@ export type ContentFiles = {
 };
 
 export type CatalogError = { slug: string; message: string };
+
+export type LoadedContent = {
+  articles: Article[];
+  errors: CatalogError[];
+  markdown: Record<string, string>;
+  flashcards: Record<string, Flashcard[]>;
+};
