@@ -85,7 +85,7 @@ describe("Home", () => {
     ).toHaveAttribute("href", "/o-agente-secreto");
     expect(screen.queryByRole("banner")).not.toBeInTheDocument();
     expect(screen.queryByRole("contentinfo")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "#AI" })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: "#IA" })).toHaveAttribute(
       "aria-pressed",
       "false",
     );
@@ -110,6 +110,9 @@ describe("Home", () => {
     });
 
     expect(screen.getByRole("heading", { name: EN_TITLE })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "#Leadership" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "#Lideranca" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "#AI" })).toBeInTheDocument();
 
     await user.type(screen.getByLabelText("Search"), "zzz");
     expect(screen.getByText("No articles match.")).toBeInTheDocument();

@@ -1,6 +1,7 @@
 import type {
   Article,
   ArticleLocale,
+  ArticleTag,
   CatalogError,
   ContentFiles,
   Locale,
@@ -23,9 +24,10 @@ export function validateCatalog(
   const articles: Article[] = [];
   const errors: CatalogError[] = [];
   const acceptedSlugs = new Set<string>();
+  const knownTags = new Map<string, string>();
 
   for (const row of raw.articles) {
-    const result = validateRow(row, files, acceptedSlugs);
+    const result = validateRow(row, files, acceptedSlugs, knownTags);
     if (result.article) {
       acceptedSlugs.add(result.article.slug);
       articles.push(result.article);
@@ -49,6 +51,7 @@ function validateRow(
   row: unknown,
   files: ContentFiles,
   acceptedSlugs: Set<string>,
+  knownTags: Map<string, string>,
 ): { article: Article; error?: undefined } | { article?: undefined; error: CatalogError } {
   if (typeof row !== "object" || row === null) {
     return { error: { slug: "", message: "article must be an object" } };
@@ -69,7 +72,7 @@ function validateRow(
     return { error: { slug, message: "date must be a real YYYY-MM-DD calendar date" } };
   }
 
-  const tags = validateTags(record.tags);
+  const tags = validateTags(record.tags, knownTags);
   if (typeof tags === "string") {
     return { error: { slug, message: tags } };
   }
@@ -107,26 +110,53 @@ function isCalendarDate(value: unknown): value is string {
   );
 }
 
-function validateTags(tags: unknown): string[] | string {
+const TAG_TOKEN = /^[A-Za-z0-9]+$/;
+
+function validateTags(
+  tags: unknown,
+  knownTags: Map<string, string>,
+): ArticleTag[] | string {
   if (!Array.isArray(tags) || tags.length === 0) {
-    return "tags must be a non-empty list of strings";
+    return "tags must be a non-empty list of { id, pt, en, es }";
   }
 
   const seen = new Set<string>();
+  const result: ArticleTag[] = [];
   for (const tag of tags) {
-    if (typeof tag !== "string" || tag.length === 0) {
-      return "tag must be a non-empty string";
+    if (typeof tag !== "object" || tag === null) {
+      return "tag must be { id, pt, en, es }";
     }
-    if (tag.includes("#") || /\s/.test(tag)) {
-      return "tag must not contain # or whitespace";
+    const record = tag as Record<string, unknown>;
+    const id = record.id;
+    if (!isTagToken(id)) {
+      return "tag.id must be a token without # or whitespace";
     }
-    if (seen.has(tag)) {
+    const labels = {} as Record<Locale, string>;
+    for (const locale of LOCALES) {
+      const label = record[locale];
+      if (!isTagToken(label)) {
+        return `tag.${locale} must be a token without # or whitespace`;
+      }
+      labels[locale] = label;
+    }
+    if (seen.has(id)) {
       return "duplicate tag";
     }
-    seen.add(tag);
+    seen.add(id);
+    const signature = `${labels.pt}\0${labels.en}\0${labels.es}`;
+    const known = knownTags.get(id);
+    if (known && known !== signature) {
+      return `tag ${id} must use the same labels in every article`;
+    }
+    knownTags.set(id, signature);
+    result.push({ id, pt: labels.pt, en: labels.en, es: labels.es });
   }
 
-  return tags;
+  return result;
+}
+
+function isTagToken(value: unknown): value is string {
+  return typeof value === "string" && TAG_TOKEN.test(value);
 }
 
 function validateLocales(

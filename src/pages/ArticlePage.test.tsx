@@ -102,12 +102,12 @@ describe("Article", () => {
     expect(screen.getByRole("searchbox", { name: "Busca" })).toBeInTheDocument();
     expect(screen.getByLabelText("De")).toBeInTheDocument();
     expect(screen.getByLabelText("Até")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "#AI" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "#IA" })).toHaveAttribute(
       "href",
       "/?tag=AI",
     );
     const articleTags = screen.getByRole("list", { name: "Tags do artigo" });
-    expect(within(articleTags).getByText("#AI")).toBeInTheDocument();
+    expect(within(articleTags).getByText("#IA")).toBeInTheDocument();
     expect(within(articleTags).queryByRole("link")).not.toBeInTheDocument();
     expect(
       screen
@@ -125,9 +125,9 @@ describe("Article", () => {
     expect(card).toHaveAttribute("aria-pressed", "true");
     expect(card).toHaveAttribute("aria-label", "Virar para a frente");
 
-    await user.click(screen.getByRole("link", { name: "#AI" }));
+    await user.click(screen.getByRole("link", { name: "#IA" }));
 
-    expect(screen.getByRole("button", { name: "#AI" })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: "#IA" })).toHaveAttribute(
       "aria-pressed",
       "true",
     );

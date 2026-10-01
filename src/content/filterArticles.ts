@@ -1,4 +1,4 @@
-import type { Article, Locale } from "../types/content";
+import type { Article, ArticleTag, Locale } from "../types/content";
 
 export type ArticleFilters = {
   query: string;
@@ -40,7 +40,7 @@ export function filterArticles(
 
       if (
         filters.tags.length > 0 &&
-        !filters.tags.every((tag) => article.tags.includes(tag))
+        !filters.tags.every((tag) => article.tags.some((item) => item.id === tag))
       ) {
         return false;
       }
@@ -69,16 +69,20 @@ export function formatArticleDate(isoDate: string, locale: Locale): string {
   }).format(date);
 }
 
-export function collectTags(articles: Article[]): string[] {
+export function tagLabel(tag: ArticleTag, locale: Locale): string {
+  return tag[locale];
+}
+
+export function collectTags(articles: Article[]): ArticleTag[] {
   const seen = new Set<string>();
-  const tags: string[] = [];
+  const tags: ArticleTag[] = [];
 
   for (const article of articles) {
     for (const tag of article.tags) {
-      if (seen.has(tag)) {
+      if (seen.has(tag.id)) {
         continue;
       }
-      seen.add(tag);
+      seen.add(tag.id);
       tags.push(tag);
     }
   }

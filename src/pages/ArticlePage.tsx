@@ -6,7 +6,7 @@ import { ArticleShare } from "../components/ArticleShare";
 import { BlogColumns } from "../components/BlogColumns";
 import { FlashcardDeck } from "../components/FlashcardDeck";
 import { MarkdownBody } from "../components/MarkdownBody";
-import { collectTags, formatArticleDate } from "../content/filterArticles";
+import { collectTags, formatArticleDate, tagLabel } from "../content/filterArticles";
 import { useLocale } from "../context/LocaleContext";
 import { useTheme } from "../context/ThemeContext";
 import { blogNavigationHref } from "../share/articleShareUrl";
@@ -140,10 +140,10 @@ export function ArticlePage({ content }: { content: LoadedContent }) {
           <ul aria-label={t("article_tags")} className="flex flex-wrap gap-2">
             {article.tags.map((tag) => (
               <li
-                key={tag}
+                key={tag.id}
                 className={`rounded-full border px-3 py-1 text-sm ${tagClass}`}
               >
-                #{tag}
+                #{tagLabel(tag, locale)}
               </li>
             ))}
           </ul>
