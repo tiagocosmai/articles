@@ -70,7 +70,7 @@ export function ArticlePage({ content }: { content: LoadedContent }) {
     dateFrom?: string;
     dateTo?: string;
   }) {
-    const destination = blogNavigationHref(listingSearch(next));
+    const destination = blogNavigationHref(listingSearch(next), undefined, locale);
     if (destination.external) {
       window.top?.location.assign(destination.href);
       return;
@@ -123,6 +123,8 @@ export function ArticlePage({ content }: { content: LoadedContent }) {
               slug={article.slug}
               title={article.locales[locale].title}
               description={article.locales[locale].description}
+              date={article.date}
+              markdown={typeof markdown === "string" ? markdown : ""}
             />
           </header>
           {typeof markdown === "string" ? (

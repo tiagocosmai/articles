@@ -41,8 +41,24 @@ describe("Home", () => {
     const link = screen.getByRole("link", { name: (name) => name.includes(PT_TITLE) });
     expect(link).toHaveAttribute(
       "href",
-      "http://127.0.0.1:5173/blog/o-agente-secreto",
+      "http://127.0.0.1:5173/pt/blog/o-agente-secreto",
     );
+    act(() => {
+      window.dispatchEvent(
+        new MessageEvent("message", {
+          origin: window.location.origin,
+          data: {
+            channel: "tiagocosmai-embed",
+            topic: "preferences",
+            locale: "en",
+            theme: "dark",
+          },
+        }),
+      );
+    });
+    expect(
+      screen.getByRole("link", { name: (name) => name.includes(EN_TITLE) }),
+    ).toHaveAttribute("href", "http://127.0.0.1:5173/en/blog/o-agente-secreto");
     expect(link).toHaveAttribute("target", "_top");
   });
 

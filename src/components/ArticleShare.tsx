@@ -1,11 +1,21 @@
 import { useState } from "react";
 import { useLocale } from "../context/LocaleContext";
 import { useTheme } from "../context/ThemeContext";
+import { formatArticleDate } from "../content/filterArticles";
+import {
+  articleCitation,
+  articlePdfFilename,
+  articlePrintHtml,
+  markdownToBlocks,
+} from "../print/articleDocument";
+import { buildArticlePdf, downloadArticlePdf } from "../print/articlePdf";
+import { printArticle } from "../print/printArticle";
 import { copyToClipboard } from "../share/copyToClipboard";
 import {
   articleShareMessage,
   articleShareUrl,
   linkedInShareHref,
+  portfolioShareOrigin,
   whatsAppShareHref,
 } from "../share/articleShareUrl";
 
@@ -13,15 +23,19 @@ export function ArticleShare({
   slug,
   title,
   description,
+  date,
+  markdown,
 }: {
   slug: string;
   title: string;
   description: string;
+  date: string;
+  markdown: string;
 }) {
-  const { t } = useLocale();
+  const { locale, t } = useLocale();
   const { mode } = useTheme();
   const [copied, setCopied] = useState<"text" | "url" | null>(null);
-  const url = articleShareUrl(slug);
+  const url = articleShareUrl(slug, portfolioShareOrigin(), locale);
   const message = articleShareMessage({
     intro: t("share_intro"),
     title,
@@ -41,6 +55,34 @@ export function ArticleShare({
   }
 
   const controlClass = `inline-flex h-8 w-8 items-center justify-center rounded-md border ${buttonClass}`;
+  const dateLabel = formatArticleDate(date, locale);
+  const accessDate = formatArticleDate(todayIso(), locale);
+  const citation = articleCitation({
+    locale,
+    title,
+    articleDate: dateLabel,
+    url,
+    accessDate,
+  });
+  const printHtml = articlePrintHtml({
+    title,
+    dateLabel,
+    blocks: markdownToBlocks(markdown),
+    citationLabel: t("citation_label"),
+    citation,
+  });
+
+  async function savePdf() {
+    const bytes = await buildArticlePdf({
+      title,
+      dateLabel,
+      blocks: markdownToBlocks(markdown),
+      citationLabel: t("citation_label"),
+      citation,
+      url,
+    });
+    downloadArticlePdf(bytes, articlePdfFilename(slug));
+  }
 
   return (
     <div role="group" aria-label={t("share_label")} className="flex shrink-0 items-center gap-2">
@@ -86,8 +128,35 @@ export function ArticleShare({
       >
         {copied === "url" ? <CheckIcon /> : <LinkIcon />}
       </button>
+      <button
+        type="button"
+        onClick={() => printArticle(printHtml, title)}
+        aria-label={t("print_article")}
+        title={t("print_article")}
+        className={controlClass}
+      >
+        <PrintIcon />
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          void savePdf();
+        }}
+        aria-label={t("download_pdf")}
+        title={t("download_pdf")}
+        className={controlClass}
+      >
+        <PdfIcon />
+      </button>
     </div>
   );
+}
+
+function todayIso(): string {
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${now.getFullYear()}-${month}-${day}`;
 }
 
 function LinkedInIcon() {
@@ -120,6 +189,27 @@ function LinkIcon() {
     <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
       <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
       <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+    </svg>
+  );
+}
+
+function PrintIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M6 9V3h12v6" />
+      <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+      <path d="M6 14h12v7H6z" />
+    </svg>
+  );
+}
+
+function PdfIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <path d="M14 2v6h6" />
+      <path d="M12 18v-6" />
+      <path d="M9.5 15.5 12 18l2.5-2.5" />
     </svg>
   );
 }

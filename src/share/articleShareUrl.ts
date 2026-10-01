@@ -1,4 +1,10 @@
+import type { Locale } from "../types/content";
+
 export const PORTFOLIO_ORIGIN = "https://tiagocosmai.github.io";
+
+export function portfolioLocalePrefix(locale: Locale = "pt"): string {
+  return `/${locale}`;
+}
 
 export function portfolioShareOrigin(): string {
   if (window.parent !== window) {
@@ -11,19 +17,28 @@ export function portfolioShareOrigin(): string {
   return PORTFOLIO_ORIGIN;
 }
 
-export function articleShareUrl(slug: string, origin = portfolioShareOrigin()): string {
-  return absoluteBlogHref(`/${slug}`, origin);
+export function articleShareUrl(
+  slug: string,
+  origin = portfolioShareOrigin(),
+  locale: Locale = "pt",
+): string {
+  return absoluteBlogHref(`/${slug}`, origin, locale);
 }
 
 /** Articles path such as `/slug` or `/?tag=AI` on the portfolio origin. */
-export function absoluteBlogHref(articlesPath: string, origin: string): string {
+export function absoluteBlogHref(
+  articlesPath: string,
+  origin: string,
+  locale: Locale = "pt",
+): string {
   const base = origin.replace(/\/$/, "");
   const queryAt = articlesPath.indexOf("?");
   const pathname = queryAt === -1 ? articlesPath : articlesPath.slice(0, queryAt);
   const search = queryAt === -1 ? "" : articlesPath.slice(queryAt);
   const path = pathname.replace(/\/+$/, "") || "/";
-  if (path === "/") return `${base}/blog${search}`;
-  return `${base}/blog${path.startsWith("/") ? path : `/${path}`}${search}`;
+  const prefix = portfolioLocalePrefix(locale);
+  if (path === "/") return `${base}${prefix}/blog${search}`;
+  return `${base}${prefix}/blog${path.startsWith("/") ? path : `/${path}`}${search}`;
 }
 
 let rememberedPortfolioOrigin = "";
@@ -47,6 +62,7 @@ export function portfolioOriginSnapshot() {
 export function blogNavigationHref(
   articlesPath: string,
   portfolioOrigin = rememberedPortfolioOrigin,
+  locale: Locale = "pt",
 ): { href: string; external: boolean } {
   if (window.parent === window) {
     return { href: articlesPath, external: false };
@@ -60,7 +76,7 @@ export function blogNavigationHref(
     }
   }
   if (!origin) origin = PORTFOLIO_ORIGIN;
-  return { href: absoluteBlogHref(articlesPath, origin), external: true };
+  return { href: absoluteBlogHref(articlesPath, origin, locale), external: true };
 }
 
 export function articleShareMessage(input: {
