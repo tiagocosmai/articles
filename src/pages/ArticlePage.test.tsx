@@ -53,7 +53,7 @@ describe("Article", () => {
       "Olha esse artigo bacana que eu encontrei...",
       PT_TITLE,
       "Quando a inteligência artificial deixa de responder e passa a agir, a autonomia pode ser delegada, mas a responsabilidade continua humana.",
-      "https://tiagocosmai.github.io/blog/o-agente-secreto",
+      "https://tiagocosmai.github.io/pt/blog/o-agente-secreto",
     ].join("\n\n");
     expect(screen.getByRole("link", { name: "Compartilhar no LinkedIn" })).toHaveAttribute(
       "href",
@@ -78,9 +78,27 @@ describe("Article", () => {
     expect(screen.getByRole("button", { name: "Texto do artigo copiado" })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Copiar o link do artigo" }));
     expect(writeText).toHaveBeenCalledWith(
-      "https://tiagocosmai.github.io/blog/o-agente-secreto",
+      "https://tiagocosmai.github.io/pt/blog/o-agente-secreto",
     );
     expect(screen.getByRole("button", { name: "Link do artigo copiado" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Imprimir artigo" }));
+    const frame = document.querySelector("iframe");
+    expect(frame?.contentDocument?.body.textContent).toContain(
+      "Disponível em: https://tiagocosmai.github.io/pt/blog/o-agente-secreto",
+    );
+    expect(frame?.contentDocument?.body.textContent).toContain(
+      "Autonomia pode ser delegada. Accountability não.",
+    );
+    const downloads: string[] = [];
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (
+      this: HTMLAnchorElement,
+    ) {
+      downloads.push(this.download);
+    });
+    URL.createObjectURL = vi.fn(() => "blob:article-pdf");
+    URL.revokeObjectURL = vi.fn();
+    await user.click(screen.getByRole("button", { name: "Gerar PDF" }));
+    expect(downloads).toEqual(["o-agente-secreto.pdf"]);
     expect(screen.getByRole("searchbox", { name: "Busca" })).toBeInTheDocument();
     expect(screen.getByLabelText("De")).toBeInTheDocument();
     expect(screen.getByLabelText("Até")).toBeInTheDocument();
@@ -123,6 +141,8 @@ describe("Article", () => {
       "Share on WhatsApp",
       "Copy the article text",
       "Copy the article link",
+      "Print article",
+      "Download PDF",
       "Look at this great article I found...",
       "The Secret Agent: who answers when AI starts acting inside organizations?",
     ],
@@ -132,22 +152,29 @@ describe("Article", () => {
       "Compartir en WhatsApp",
       "Copiar el texto del artículo",
       "Copiar el enlace del artículo",
+      "Imprimir artículo",
+      "Generar PDF",
       "Mira este artículo buenísimo que encontré...",
       "El agente secreto: ¿quién responde cuando la IA empieza a actuar en las organizaciones?",
     ],
   ] as const)(
     "labels the share actions in %s",
-    (locale, linkedIn, whatsApp, copyText, copyUrl, intro, title) => {
+    (locale, linkedIn, whatsApp, copyText, copyUrl, printArticle, downloadPdf, intro, title) => {
       localStorage.setItem("articles-locale", locale);
       renderAt("/o-agente-secreto");
       expect(screen.getByRole("link", { name: linkedIn })).toHaveAttribute("title", linkedIn);
       expect(screen.getByRole("link", { name: whatsApp })).toHaveAttribute("title", whatsApp);
       expect(screen.getByRole("button", { name: copyText })).toHaveAttribute("title", copyText);
       expect(screen.getByRole("button", { name: copyUrl })).toHaveAttribute("title", copyUrl);
+      expect(screen.getByRole("button", { name: printArticle })).toHaveAttribute("title", printArticle);
+      expect(screen.getByRole("button", { name: downloadPdf })).toHaveAttribute("title", downloadPdf);
       const href = screen.getByRole("link", { name: whatsApp }).getAttribute("href") ?? "";
       const text = decodeURIComponent(href.split("text=")[1] ?? "");
       expect(text).toContain(intro);
       expect(text).toContain(title);
+      expect(text).toContain(
+        `https://tiagocosmai.github.io/${locale}/blog/o-agente-secreto`,
+      );
     },
   );
 
