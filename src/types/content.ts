@@ -6,10 +6,17 @@ export type ArticleLocale = {
   markdown: string;
 };
 
+export type ArticleTag = {
+  id: string;
+  pt: string;
+  en: string;
+  es: string;
+};
+
 export type Article = {
   slug: string;
   date: string;
-  tags: string[];
+  tags: ArticleTag[];
   locales: Record<Locale, ArticleLocale>;
 };
 

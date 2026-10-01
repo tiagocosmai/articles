@@ -4,13 +4,13 @@
       "slug": "desenvolvedores-escravos-da-tecnologia-ia",
       "date": "2026-09-26",
       "tags": [
-        "InteligenciaArtificial",
-        "DesenvolvimentoDeSoftware",
-        "Tecnologia",
-        "Lideranca",
-        "Carreira",
-        "AprendizadoContinuo",
-        "AI"
+        { "id": "InteligenciaArtificial", "pt": "InteligenciaArtificial", "en": "ArtificialIntelligence", "es": "InteligenciaArtificial" },
+        { "id": "DesenvolvimentoDeSoftware", "pt": "DesenvolvimentoDeSoftware", "en": "SoftwareDevelopment", "es": "DesarrolloDeSoftware" },
+        { "id": "Tecnologia", "pt": "Tecnologia", "en": "Technology", "es": "Tecnologia" },
+        { "id": "Lideranca", "pt": "Lideranca", "en": "Leadership", "es": "Liderazgo" },
+        { "id": "Carreira", "pt": "Carreira", "en": "Career", "es": "Carrera" },
+        { "id": "AprendizadoContinuo", "pt": "AprendizadoContinuo", "en": "ContinuousLearning", "es": "AprendizajeContinuo" },
+        { "id": "AI", "pt": "IA", "en": "AI", "es": "IA" }
       ],
       "locales": {
         "pt": {
@@ -34,15 +34,15 @@
       "slug": "o-agente-secreto",
       "date": "2026-09-24",
       "tags": [
-        "InteligenciaArtificial",
-        "AgentesDeIA",
-        "Lideranca",
-        "Tecnologia",
-        "Governanca",
-        "DesenvolvimentoDeSoftware",
-        "TransformacaoDigital",
-        "AI",
-        "TechLeadership"
+        { "id": "InteligenciaArtificial", "pt": "InteligenciaArtificial", "en": "ArtificialIntelligence", "es": "InteligenciaArtificial" },
+        { "id": "AgentesDeIA", "pt": "AgentesDeIA", "en": "AIAgents", "es": "AgentesDeIA" },
+        { "id": "Lideranca", "pt": "Lideranca", "en": "Leadership", "es": "Liderazgo" },
+        { "id": "Tecnologia", "pt": "Tecnologia", "en": "Technology", "es": "Tecnologia" },
+        { "id": "Governanca", "pt": "Governanca", "en": "Governance", "es": "Gobernanza" },
+        { "id": "DesenvolvimentoDeSoftware", "pt": "DesenvolvimentoDeSoftware", "en": "SoftwareDevelopment", "es": "DesarrolloDeSoftware" },
+        { "id": "TransformacaoDigital", "pt": "TransformacaoDigital", "en": "DigitalTransformation", "es": "TransformacionDigital" },
+        { "id": "AI", "pt": "IA", "en": "AI", "es": "IA" },
+        { "id": "TechLeadership", "pt": "LiderancaTech", "en": "TechLeadership", "es": "LiderazgoTech" }
       ],
       "locales": {
         "pt": {

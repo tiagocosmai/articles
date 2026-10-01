@@ -1,4 +1,6 @@
+import { tagLabel } from "../content/filterArticles";
 import { useLocale } from "../context/LocaleContext";
+import type { ArticleTag } from "../types/content";
 import { BlogLink } from "./BlogLink";
 import { useTheme } from "../context/ThemeContext";
 
@@ -7,7 +9,7 @@ type ArticleFiltersProps = {
   dateFrom: string;
   dateTo: string;
   selectedTags: string[];
-  availableTags: string[];
+  availableTags: ArticleTag[];
   onQueryChange: (value: string) => void;
   onDateFromChange: (value: string) => void;
   onDateToChange: (value: string) => void;
@@ -27,7 +29,7 @@ export function ArticleFilters({
   onToggleTag,
   tagHref,
 }: ArticleFiltersProps) {
-  const { t } = useLocale();
+  const { locale, t } = useLocale();
   const { mode } = useTheme();
   const isDark = mode === "dark";
   const field = isDark
@@ -77,27 +79,28 @@ export function ArticleFilters({
         <span className="text-sm">{t("tags_label")}</span>
         <div className="flex flex-wrap gap-2">
           {availableTags.map((tag) => {
+            const label = `#${tagLabel(tag, locale)}`;
             const className = `inline-block rounded-full border px-3 py-1 text-sm ${tagIdle}`;
             if (tagHref) {
               return (
-                <BlogLink key={tag} to={tagHref(tag)} className={className}>
-                  #{tag}
+                <BlogLink key={tag.id} to={tagHref(tag.id)} className={className}>
+                  {label}
                 </BlogLink>
               );
             }
 
-            const pressed = selectedTags.includes(tag);
+            const pressed = selectedTags.includes(tag.id);
             return (
               <button
-                key={tag}
+                key={tag.id}
                 type="button"
                 aria-pressed={pressed}
-                onClick={() => onToggleTag?.(tag)}
+                onClick={() => onToggleTag?.(tag.id)}
                 className={`rounded-full border px-3 py-1 text-sm ${
                   pressed ? tagPressed : tagIdle
                 }`}
               >
-                #{tag}
+                {label}
               </button>
             );
           })}
