@@ -1,5 +1,5 @@
-import { Link } from "react-router-dom";
 import { useLocale } from "../context/LocaleContext";
+import { BlogLink } from "./BlogLink";
 import { useTheme } from "../context/ThemeContext";
 
 type ArticleFiltersProps = {
@@ -80,9 +80,9 @@ export function ArticleFilters({
             const className = `inline-block rounded-full border px-3 py-1 text-sm ${tagIdle}`;
             if (tagHref) {
               return (
-                <Link key={tag} to={tagHref(tag)} className={className}>
+                <BlogLink key={tag} to={tagHref(tag)} className={className}>
                   #{tag}
-                </Link>
+                </BlogLink>
               );
             }
 

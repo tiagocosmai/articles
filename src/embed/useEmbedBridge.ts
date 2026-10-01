@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useLocale } from "../context/LocaleContext";
 import { useTheme } from "../context/ThemeContext";
+import { rememberPortfolioOrigin } from "../share/articleShareUrl";
 import {
   isTrustedEmbedOrigin,
   parseEmbedMessage,
@@ -20,9 +21,12 @@ export function useEmbedBridge() {
       if (message.topic === "preferences") {
         setLocale(message.locale);
         setMode(message.theme);
+        if (message.origin) rememberPortfolioOrigin(message.origin);
         return;
       }
-      window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+      if (message.topic === "scroll-top") {
+        window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+      }
     };
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);

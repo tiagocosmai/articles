@@ -1,12 +1,15 @@
 import { useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+import { BlogLink } from "../components/BlogLink";
 import { ArticleFilters } from "../components/ArticleFilters";
+import { ArticleShare } from "../components/ArticleShare";
 import { BlogColumns } from "../components/BlogColumns";
 import { FlashcardDeck } from "../components/FlashcardDeck";
 import { MarkdownBody } from "../components/MarkdownBody";
 import { collectTags, formatArticleDate } from "../content/filterArticles";
 import { useLocale } from "../context/LocaleContext";
 import { useTheme } from "../context/ThemeContext";
+import { blogNavigationHref } from "../share/articleShareUrl";
 import type { LoadedContent } from "../types/content";
 import { NotFoundPage } from "./NotFoundPage";
 
@@ -67,7 +70,12 @@ export function ArticlePage({ content }: { content: LoadedContent }) {
     dateFrom?: string;
     dateTo?: string;
   }) {
-    navigate(listingSearch(next));
+    const destination = blogNavigationHref(listingSearch(next));
+    if (destination.external) {
+      window.top?.location.assign(destination.href);
+      return;
+    }
+    navigate(destination.href);
   }
 
   return (
@@ -100,17 +108,22 @@ export function ArticlePage({ content }: { content: LoadedContent }) {
       }
       content={
         <article className="flex flex-col gap-6">
-          <Link
+          <BlogLink
             to="/"
             className={`inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-bold ${backClass}`}
           >
             <span aria-hidden="true">←</span>
             {t("back_blog")}
-          </Link>
-          <header>
+          </BlogLink>
+          <header className="flex items-center justify-between gap-3">
             <time dateTime={article.date} className="text-sm opacity-80">
               {formatArticleDate(article.date, locale)}
             </time>
+            <ArticleShare
+              slug={article.slug}
+              title={article.locales[locale].title}
+              description={article.locales[locale].description}
+            />
           </header>
           {typeof markdown === "string" ? (
             <MarkdownBody markdown={markdown} />

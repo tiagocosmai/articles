@@ -49,6 +49,38 @@ describe("Article", () => {
       "href",
       "/",
     );
+    const shareText = [
+      "Olha esse artigo bacana que eu encontrei...",
+      PT_TITLE,
+      "Quando a inteligência artificial deixa de responder e passa a agir, a autonomia pode ser delegada, mas a responsabilidade continua humana.",
+      "https://tiagocosmai.github.io/blog/o-agente-secreto",
+    ].join("\n\n");
+    expect(screen.getByRole("link", { name: "Compartilhar no LinkedIn" })).toHaveAttribute(
+      "href",
+      `https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(shareText)}`,
+    );
+    expect(screen.getByRole("link", { name: "Compartilhar no LinkedIn" })).toHaveAttribute(
+      "title",
+      "Compartilhar no LinkedIn",
+    );
+    expect(screen.getByRole("link", { name: "Compartilhar no WhatsApp" })).toHaveAttribute(
+      "href",
+      `https://wa.me/?text=${encodeURIComponent(shareText)}`,
+    );
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    });
+    document.execCommand = vi.fn(() => false);
+    await user.click(screen.getByRole("button", { name: "Copiar o texto do artigo" }));
+    expect(writeText).toHaveBeenCalledWith(shareText);
+    expect(screen.getByRole("button", { name: "Texto do artigo copiado" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Copiar o link do artigo" }));
+    expect(writeText).toHaveBeenCalledWith(
+      "https://tiagocosmai.github.io/blog/o-agente-secreto",
+    );
+    expect(screen.getByRole("button", { name: "Link do artigo copiado" })).toBeInTheDocument();
     expect(screen.getByRole("searchbox", { name: "Busca" })).toBeInTheDocument();
     expect(screen.getByLabelText("De")).toBeInTheDocument();
     expect(screen.getByLabelText("Até")).toBeInTheDocument();
@@ -83,6 +115,41 @@ describe("Article", () => {
     );
     expect(screen.getByRole("heading", { name: PT_TITLE })).toBeInTheDocument();
   });
+
+  it.each([
+    [
+      "en",
+      "Share on LinkedIn",
+      "Share on WhatsApp",
+      "Copy the article text",
+      "Copy the article link",
+      "Look at this great article I found...",
+      "The Secret Agent: who answers when AI starts acting inside organizations?",
+    ],
+    [
+      "es",
+      "Compartir en LinkedIn",
+      "Compartir en WhatsApp",
+      "Copiar el texto del artículo",
+      "Copiar el enlace del artículo",
+      "Mira este artículo buenísimo que encontré...",
+      "El agente secreto: ¿quién responde cuando la IA empieza a actuar en las organizaciones?",
+    ],
+  ] as const)(
+    "labels the share actions in %s",
+    (locale, linkedIn, whatsApp, copyText, copyUrl, intro, title) => {
+      localStorage.setItem("articles-locale", locale);
+      renderAt("/o-agente-secreto");
+      expect(screen.getByRole("link", { name: linkedIn })).toHaveAttribute("title", linkedIn);
+      expect(screen.getByRole("link", { name: whatsApp })).toHaveAttribute("title", whatsApp);
+      expect(screen.getByRole("button", { name: copyText })).toHaveAttribute("title", copyText);
+      expect(screen.getByRole("button", { name: copyUrl })).toHaveAttribute("title", copyUrl);
+      const href = screen.getByRole("link", { name: whatsApp }).getAttribute("href") ?? "";
+      const text = decodeURIComponent(href.split("text=")[1] ?? "");
+      expect(text).toContain(intro);
+      expect(text).toContain(title);
+    },
+  );
 
   it("shows not found for an unknown slug, with a link home", () => {
     renderAt("/missing");

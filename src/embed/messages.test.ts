@@ -35,6 +35,24 @@ describe("embed messages", () => {
     expect(
       parseEmbedMessage({
         channel: EMBED_CHANNEL,
+        topic: "navigate",
+        path: "/o-agente-secreto",
+      }),
+    ).toEqual({
+      channel: EMBED_CHANNEL,
+      topic: "navigate",
+      path: "/o-agente-secreto",
+    });
+    expect(
+      parseEmbedMessage({
+        channel: EMBED_CHANNEL,
+        topic: "navigate",
+        path: "https://evil.example",
+      }),
+    ).toBeNull();
+    expect(
+      parseEmbedMessage({
+        channel: EMBED_CHANNEL,
         topic: "preferences",
         locale: "fr",
         theme: "light",

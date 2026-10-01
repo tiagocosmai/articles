@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { BlogLink } from "../components/BlogLink";
 import { useLocale } from "../context/LocaleContext";
 import { useTheme } from "../context/ThemeContext";
 
@@ -14,9 +14,9 @@ export function NotFoundPage() {
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
       <h1 className="font-mono text-3xl leading-tight">{t("not_found_title")}</h1>
       <p>{t("not_found_body")}</p>
-      <Link to="/" className={link}>
+      <BlogLink to="/" className={link}>
         {t("back_home")}
-      </Link>
+      </BlogLink>
     </div>
   );
 }
