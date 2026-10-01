@@ -4,6 +4,7 @@ import { loadCatalog, reportCatalogErrors } from "./content/loadCatalog";
 import { LocaleProvider } from "./context/LocaleContext";
 import { ThemeProvider, useTheme } from "./context/ThemeContext";
 import { useEmbedBridge } from "./embed/useEmbedBridge";
+import { useEmbedLocation } from "./embed/useEmbedLocation";
 import { ArticlePage } from "./pages/ArticlePage";
 import { HomePage } from "./pages/HomePage";
 import { NotFoundPage } from "./pages/NotFoundPage";
@@ -13,6 +14,7 @@ import type { LoadedContent } from "./types/content";
 function AppShell({ content }: { content: LoadedContent }) {
   const { mode } = useTheme();
   useEmbedBridge();
+  useEmbedLocation();
   const themeClass =
     mode === "dark"
       ? "bg-surface-dark text-white"

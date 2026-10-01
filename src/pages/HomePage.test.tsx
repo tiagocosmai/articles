@@ -21,6 +21,29 @@ describe("Home", () => {
 
   afterEach(() => {
     localStorage.clear();
+    vi.restoreAllMocks();
+  });
+
+  it("opens an embedded article at /blog on the portfolio", () => {
+    vi.spyOn(window, "parent", "get").mockReturnValue({
+      postMessage: vi.fn(),
+    } as unknown as Window);
+    vi.spyOn(document, "referrer", "get").mockReturnValue("http://127.0.0.1:5173/blog");
+    render(
+      <MemoryRouter>
+        <LocaleProvider>
+          <ThemeProvider>
+            <AppRoutes content={loadCatalog()} />
+          </ThemeProvider>
+        </LocaleProvider>
+      </MemoryRouter>,
+    );
+    const link = screen.getByRole("link", { name: (name) => name.includes(PT_TITLE) });
+    expect(link).toHaveAttribute(
+      "href",
+      "http://127.0.0.1:5173/blog/o-agente-secreto",
+    );
+    expect(link).toHaveAttribute("target", "_top");
   });
 
   it("lists the article in Portuguese, switches language, and filters by search and date", async () => {

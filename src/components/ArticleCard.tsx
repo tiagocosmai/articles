@@ -1,8 +1,8 @@
-import { Link } from "react-router-dom";
 import { formatArticleDate } from "../content/filterArticles";
 import { useLocale } from "../context/LocaleContext";
 import { useTheme } from "../context/ThemeContext";
 import type { Article } from "../types/content";
+import { BlogLink } from "./BlogLink";
 
 export function ArticleCard({ article }: { article: Article }) {
   const { locale } = useLocale();
@@ -12,7 +12,7 @@ export function ArticleCard({ article }: { article: Article }) {
   const border = mode === "dark" ? "border-white/15" : "border-black/10";
 
   return (
-    <Link
+    <BlogLink
       to={`/${article.slug}`}
       className={`block rounded-lg border ${border} px-4 py-4`}
     >
@@ -21,6 +21,6 @@ export function ArticleCard({ article }: { article: Article }) {
         {formatArticleDate(article.date, locale)}
       </time>
       <p className="mt-3 leading-relaxed">{description}</p>
-    </Link>
+    </BlogLink>
   );
 }
