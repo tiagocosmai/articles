@@ -1,4 +1,5 @@
 import type { Article, Locale } from "../types/content";
+import { filterArticles, type ArticleFilters } from "./filterArticles";
 
 export type ArticleSort = {
   field: "date" | "title";
@@ -50,4 +51,57 @@ export function sortArticles(
   sort: ArticleSort,
 ): Article[] {
   return articles.slice().sort((left, right) => compareArticles(left, right, locale, sort));
+}
+
+export const LIST_PAGE_SIZE = 10;
+
+export type ListedArticle = {
+  key: string;
+  article: Article;
+};
+
+export function repeatArticles(articles: Article[], copies: number): ListedArticle[] {
+  const listed: ListedArticle[] = [];
+  for (let copy = 0; copy < copies; copy += 1) {
+    for (const article of articles) {
+      listed.push({
+        key: copies === 1 ? article.slug : `${article.slug}-${copy}`,
+        article,
+      });
+    }
+  }
+  return listed;
+}
+
+export function filterListedArticles(
+  items: ListedArticle[],
+  locale: Locale,
+  filters: ArticleFilters,
+): ListedArticle[] {
+  const matched = new Set(
+    filterArticles(
+      items.map((item) => item.article),
+      locale,
+      filters,
+    ),
+  );
+  return items.filter((item) => matched.has(item.article));
+}
+
+export function sortListedArticles(
+  items: ListedArticle[],
+  locale: Locale,
+  sort: ArticleSort,
+): ListedArticle[] {
+  return items
+    .slice()
+    .sort((left, right) => compareArticles(left.article, right.article, locale, sort));
+}
+
+export function revealArticles<T>(items: T[], shown: number): T[] {
+  return items.slice(0, shown);
+}
+
+export function formatArticleCount(template: string, matched: number, total: number): string {
+  return template.replaceAll("{matched}", String(matched)).replaceAll("{total}", String(total));
 }
