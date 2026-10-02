@@ -80,6 +80,12 @@ describe("Home", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("24 de setembro de 2026")).toBeInTheDocument();
     expect(screen.getByText(PT_DESCRIPTION)).toBeInTheDocument();
+    expect(screen.getByText("2 de 2 artigos")).toBeInTheDocument();
+    const headings = screen.getAllByRole("heading");
+    expect(headings[0]).toHaveTextContent(
+      "Desenvolvedores, analistas e DBAs: escravos da tecnologia na era da IA?",
+    );
+    expect(headings[1]).toHaveTextContent(PT_TITLE);
     expect(
       screen.getByRole("link", { name: (name) => name.includes(PT_TITLE) }),
     ).toHaveAttribute("href", "/o-agente-secreto");
@@ -113,6 +119,7 @@ describe("Home", () => {
 
     await user.type(screen.getByLabelText("Search"), "zzz");
     expect(screen.getByText("No articles match.")).toBeInTheDocument();
+    expect(screen.getByText("0 of 2 articles")).toBeInTheDocument();
 
     await user.clear(screen.getByLabelText("Search"));
     expect(screen.getByRole("heading", { name: EN_TITLE })).toBeInTheDocument();

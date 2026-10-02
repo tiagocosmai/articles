@@ -4,6 +4,7 @@ import { ArticleFilters } from "../components/ArticleFilters";
 import { ArticleList } from "../components/ArticleList";
 import { BlogColumns } from "../components/BlogColumns";
 import { collectTags } from "../content/filterArticles";
+import { repeatArticles } from "../content/listArticles";
 import type { LoadedContent } from "../types/content";
 
 export function HomePage({ content }: { content: LoadedContent }) {
@@ -24,14 +25,12 @@ export function HomePage({ content }: { content: LoadedContent }) {
     );
   }
 
+  const copies = import.meta.env.MODE === "development" ? 15 : 1;
+  const items = repeatArticles(content.articles, copies);
+
   return (
     <BlogColumns
-      content={
-        <ArticleList
-          articles={content.articles}
-          filters={{ query, dateFrom, dateTo, tags }}
-        />
-      }
+      content={<ArticleList items={items} filters={{ query, dateFrom, dateTo, tags }} />}
       filters={
         <ArticleFilters
           query={query}
