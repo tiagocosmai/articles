@@ -1,8 +1,11 @@
+import { countArticlesForTag, tagBadgeText } from "../content/filterArticles";
 import { useLocale } from "../context/LocaleContext";
+import type { Article } from "../types/content";
 import { BlogLink } from "./BlogLink";
 import { useTheme } from "../context/ThemeContext";
 
 type ArticleFiltersProps = {
+  articles: Article[];
   query: string;
   dateFrom: string;
   dateTo: string;
@@ -16,6 +19,7 @@ type ArticleFiltersProps = {
 };
 
 export function ArticleFilters({
+  articles,
   query,
   dateFrom,
   dateTo,
@@ -27,7 +31,7 @@ export function ArticleFilters({
   onToggleTag,
   tagHref,
 }: ArticleFiltersProps) {
-  const { t } = useLocale();
+  const { locale, t } = useLocale();
   const { mode } = useTheme();
   const isDark = mode === "dark";
   const field = isDark
@@ -39,6 +43,10 @@ export function ArticleFilters({
   const tagPressed = isDark
     ? "border-brand bg-brand/20 text-brand"
     : "border-brand-light bg-brand-light/15 text-brand-light";
+  const tagDisabled = isDark
+    ? "cursor-not-allowed border-white/15 text-white/35"
+    : "cursor-not-allowed border-black/10 text-black/35";
+  const filters = { query, dateFrom, dateTo, tags: selectedTags };
 
   return (
     <div className="flex flex-col gap-4">
@@ -75,29 +83,50 @@ export function ArticleFilters({
       </fieldset>
       <div className="flex flex-col gap-2">
         <span className="text-sm">{t("tags_label")}</span>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 pt-2">
           {availableTags.map((tag) => {
-            const className = `inline-block rounded-full border px-3 py-1 text-sm ${tagIdle}`;
+            const selected = selectedTags.includes(tag);
+            const count = countArticlesForTag(articles, locale, filters, tag);
+            const badge = tagBadgeText(count);
+            const disabled = count === 0 && !selected;
+            const tone = disabled ? tagDisabled : selected ? tagPressed : tagIdle;
+            const className = `group relative inline-block rounded-full border px-3 py-1 text-sm ${tone}`;
+            const badgeNode = badge ? (
+              <span
+                aria-hidden="true"
+                className="invisible absolute -right-1 -top-2 min-w-5 rounded-full bg-brand px-1 text-center text-[10px] font-bold leading-4 text-black group-hover:visible group-focus-visible:visible"
+              >
+                {badge}
+              </span>
+            ) : null;
+
+            if (disabled) {
+              return (
+                <span key={tag} aria-disabled="true" className={className}>
+                  #{tag}
+                </span>
+              );
+            }
+
             if (tagHref) {
               return (
                 <BlogLink key={tag} to={tagHref(tag)} className={className}>
                   #{tag}
+                  {badgeNode}
                 </BlogLink>
               );
             }
 
-            const pressed = selectedTags.includes(tag);
             return (
               <button
                 key={tag}
                 type="button"
-                aria-pressed={pressed}
+                aria-pressed={selected}
                 onClick={() => onToggleTag?.(tag)}
-                className={`rounded-full border px-3 py-1 text-sm ${
-                  pressed ? tagPressed : tagIdle
-                }`}
+                className={className}
               >
                 #{tag}
+                {badgeNode}
               </button>
             );
           })}

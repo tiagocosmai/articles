@@ -25,14 +25,14 @@ export function HomePage({ content }: { content: LoadedContent }) {
     );
   }
 
-  const copies = import.meta.env.MODE === "development" ? 15 : 1;
-  const items = repeatArticles(content.articles, copies);
+  const items = repeatArticles(content.articles, 1);
 
   return (
     <BlogColumns
       content={<ArticleList items={items} filters={{ query, dateFrom, dateTo, tags }} />}
       filters={
         <ArticleFilters
+          articles={content.articles}
           query={query}
           dateFrom={dateFrom}
           dateTo={dateTo}

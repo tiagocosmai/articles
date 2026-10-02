@@ -75,3 +75,23 @@ export function collectTags(articles: Article[]): string[] {
 
   return tags;
 }
+
+export function countArticlesForTag(
+  articles: Article[],
+  locale: Locale,
+  filters: ArticleFilters,
+  tag: string,
+): number {
+  const tags = filters.tags.includes(tag) ? filters.tags : [...filters.tags, tag];
+  return filterArticles(articles, locale, { ...filters, tags }).length;
+}
+
+export function tagBadgeText(count: number): string | null {
+  if (count <= 0) {
+    return null;
+  }
+  if (count > 99) {
+    return "+99";
+  }
+  return String(count);
+}

@@ -101,7 +101,8 @@ describe("ArticleList", () => {
     expect(await screen.findByRole("heading", { name: "Titulo 11" })).toBeInTheDocument();
     expect(screen.getAllByRole("heading")).toHaveLength(12);
 
-    await user.selectOptions(screen.getByLabelText("Sentido"), "asc");
+    await user.click(screen.getByRole("button", { name: "Ordenar por" }));
+    await user.click(screen.getByRole("button", { name: "Crescente" }));
 
     expect(screen.getAllByRole("heading")).toHaveLength(10);
     expect(screen.getByRole("heading", { name: "Titulo 11" })).toBeInTheDocument();

@@ -1,8 +1,10 @@
 import type { Article, Locale } from "../types/content";
 import {
   collectTags,
+  countArticlesForTag,
   filterArticles,
   formatArticleDate,
+  tagBadgeText,
 } from "./filterArticles";
 
 const emptyFilters = {
@@ -132,6 +134,32 @@ describe("filterArticles", () => {
 describe("formatArticleDate", () => {
   it('formats 2026-09-24 in pt as "24 de setembro de 2026"', () => {
     expect(formatArticleDate("2026-09-24", "pt")).toBe("24 de setembro de 2026");
+  });
+});
+
+describe("countArticlesForTag", () => {
+  it("counts articles that already match and also have the tag", () => {
+    expect(countArticlesForTag(articles, "en", emptyFilters, "AI")).toBe(2);
+    expect(countArticlesForTag(articles, "en", emptyFilters, "Product")).toBe(1);
+    expect(
+      countArticlesForTag(articles, "en", { ...emptyFilters, query: "beta" }, "Product"),
+    ).toBe(0);
+  });
+
+  it("keeps an already selected tag in the count", () => {
+    expect(countArticlesForTag(articles, "en", { ...emptyFilters, tags: ["AI"] }, "AI")).toBe(2);
+    expect(
+      countArticlesForTag(articles, "en", { ...emptyFilters, tags: ["AI"] }, "Product"),
+    ).toBe(1);
+  });
+});
+
+describe("tagBadgeText", () => {
+  it("hides zero, shows the number, and caps above 99", () => {
+    expect(tagBadgeText(0)).toBeNull();
+    expect(tagBadgeText(1)).toBe("1");
+    expect(tagBadgeText(99)).toBe("99");
+    expect(tagBadgeText(100)).toBe("+99");
   });
 });
 
