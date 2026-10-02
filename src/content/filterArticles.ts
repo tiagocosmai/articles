@@ -46,16 +46,6 @@ export function filterArticles(
       }
 
       return true;
-    })
-    .slice()
-    .sort((left, right) => {
-      if (left.date !== right.date) {
-        return left.date < right.date ? 1 : -1;
-      }
-      if (left.slug === right.slug) {
-        return 0;
-      }
-      return left.slug < right.slug ? -1 : 1;
     });
 }
 

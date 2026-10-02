@@ -59,8 +59,8 @@ const b = article({
 const articles = [b, a];
 
 describe("filterArticles", () => {
-  it("returns a then b for empty filters (date desc, slug asc)", () => {
-    expect(filterArticles(articles, "en", emptyFilters)).toEqual([a, b]);
+  it("preserves input order", () => {
+    expect(filterArticles(articles, "en", emptyFilters)).toEqual([b, a]);
   });
 
   it("matches query beta only on the Beta title, case-insensitive, active locale only", () => {
@@ -104,13 +104,13 @@ describe("filterArticles", () => {
         dateFrom: "2026-09-01",
         dateTo: "2026-09-24",
       }),
-    ).toEqual([a, b]);
+    ).toEqual([b, a]);
   });
 
   it("returns articles that have AI when tags is [AI]", () => {
     expect(
       filterArticles(articles, "en", { ...emptyFilters, tags: ["AI"] }),
-    ).toEqual([a, b]);
+    ).toEqual([b, a]);
   });
 
   it("returns only articles that have both AI and Lideranca", () => {
