@@ -21,7 +21,7 @@ function completeItem(name: string) {
   return {
     slug: name,
     date: "2026-09-24",
-    tags: ["AI"],
+    tags: [{ id: "AI", pt: "IA", en: "AI", es: "IA" }],
     locales: {
       pt: {
         title: "Título",
@@ -152,7 +152,17 @@ describe("validateCatalog", () => {
     expect(result.errors[0]?.slug).toBe("o-agente");
   });
 
-  it.each([[["#AI"]], [["AI team"]], [["AI", "AI"]]])(
+  it.each([
+    [[{ id: "AI", pt: "#IA", en: "AI", es: "IA" }]],
+    [[{ id: "AI team", pt: "IA", en: "AI", es: "IA" }]],
+    [
+      [
+        { id: "AI", pt: "IA", en: "AI", es: "IA" },
+        { id: "AI", pt: "IA", en: "AI", es: "IA" },
+      ],
+    ],
+    [["AI"]],
+  ])(
     "rejects tags %j",
     (tags) => {
       const item = { ...completeItem("o-agente"), tags };

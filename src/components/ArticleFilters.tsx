@@ -1,6 +1,6 @@
-import { countArticlesForTag, tagBadgeText } from "../content/filterArticles";
+import { countArticlesForTag, tagBadgeText, tagLabel } from "../content/filterArticles";
 import { useLocale } from "../context/LocaleContext";
-import type { Article } from "../types/content";
+import type { Article, ArticleTag } from "../types/content";
 import { BlogLink } from "./BlogLink";
 import { useTheme } from "../context/ThemeContext";
 
@@ -10,7 +10,7 @@ type ArticleFiltersProps = {
   dateFrom: string;
   dateTo: string;
   selectedTags: string[];
-  availableTags: string[];
+  availableTags: ArticleTag[];
   onQueryChange: (value: string) => void;
   onDateFromChange: (value: string) => void;
   onDateToChange: (value: string) => void;
@@ -85,12 +85,13 @@ export function ArticleFilters({
         <span className="text-sm">{t("tags_label")}</span>
         <div className="flex flex-wrap gap-2 pt-2">
           {availableTags.map((tag) => {
-            const selected = selectedTags.includes(tag);
-            const count = countArticlesForTag(articles, locale, filters, tag);
+            const selected = selectedTags.includes(tag.id);
+            const count = countArticlesForTag(articles, locale, filters, tag.id);
             const badge = tagBadgeText(count);
             const disabled = count === 0 && !selected;
             const tone = disabled ? tagDisabled : selected ? tagPressed : tagIdle;
             const className = `group relative inline-block rounded-full border px-3 py-1 text-sm ${tone}`;
+            const label = `#${tagLabel(tag, locale)}`;
             const badgeNode = badge ? (
               <span
                 aria-hidden="true"
@@ -102,16 +103,16 @@ export function ArticleFilters({
 
             if (disabled) {
               return (
-                <span key={tag} aria-disabled="true" className={className}>
-                  #{tag}
+                <span key={tag.id} aria-disabled="true" className={className}>
+                  {label}
                 </span>
               );
             }
 
             if (tagHref) {
               return (
-                <BlogLink key={tag} to={tagHref(tag)} className={className}>
-                  #{tag}
+                <BlogLink key={tag.id} to={tagHref(tag.id)} className={className}>
+                  {label}
                   {badgeNode}
                 </BlogLink>
               );
@@ -119,13 +120,13 @@ export function ArticleFilters({
 
             return (
               <button
-                key={tag}
+                key={tag.id}
                 type="button"
                 aria-pressed={selected}
-                onClick={() => onToggleTag?.(tag)}
+                onClick={() => onToggleTag?.(tag.id)}
                 className={className}
               >
-                #{tag}
+                {label}
                 {badgeNode}
               </button>
             );

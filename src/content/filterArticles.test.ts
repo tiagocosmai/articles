@@ -1,10 +1,11 @@
-import type { Article, Locale } from "../types/content";
+import type { Article, ArticleTag, Locale } from "../types/content";
 import {
   collectTags,
   countArticlesForTag,
   filterArticles,
   formatArticleDate,
   tagBadgeText,
+  tagLabel,
 } from "./filterArticles";
 
 const emptyFilters = {
@@ -14,10 +15,19 @@ const emptyFilters = {
   tags: [] as string[],
 };
 
+function tag(id: string, labels: Partial<Record<Locale, string>> = {}): ArticleTag {
+  return {
+    id,
+    pt: labels.pt ?? id,
+    en: labels.en ?? id,
+    es: labels.es ?? id,
+  };
+}
+
 function article(partial: {
   slug: string;
   date: string;
-  tags: string[];
+  tags: ArticleTag[];
   titles: Record<Locale, string>;
 }): Article {
   return {
@@ -47,14 +57,17 @@ function article(partial: {
 const a = article({
   slug: "a",
   date: "2026-09-24",
-  tags: ["AI", "Product"],
+  tags: [tag("AI", { pt: "IA", es: "IA" }), tag("Product")],
   titles: { pt: "Alpha", en: "Alpha", es: "Alpha" },
 });
 
 const b = article({
   slug: "b",
   date: "2026-09-01",
-  tags: ["AI", "Lideranca"],
+  tags: [
+    tag("AI", { pt: "IA", es: "IA" }),
+    tag("Lideranca", { en: "Leadership", es: "Liderazgo" }),
+  ],
   titles: { pt: "Beta", en: "Beta", es: "Beta" },
 });
 
@@ -165,6 +178,12 @@ describe("tagBadgeText", () => {
 
 describe("collectTags", () => {
   it("returns first-seen tag order across articles", () => {
-    expect(collectTags(articles)).toEqual(["AI", "Lideranca", "Product"]);
+    expect(collectTags(articles).map((item) => item.id)).toEqual([
+      "AI",
+      "Lideranca",
+      "Product",
+    ]);
+    expect(tagLabel(collectTags(articles)[1], "en")).toBe("Leadership");
+    expect(tagLabel(collectTags(articles)[1], "es")).toBe("Liderazgo");
   });
 });

@@ -2,8 +2,12 @@ import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { LocaleProvider } from "../context/LocaleContext";
 import { ThemeProvider } from "../context/ThemeContext";
-import type { Article, Locale } from "../types/content";
+import type { Article, ArticleTag, Locale } from "../types/content";
 import { ArticleFilters } from "./ArticleFilters";
+
+function tag(id: string): ArticleTag {
+  return { id, pt: id, en: id, es: id };
+}
 
 function article(slug: string, tags: string[], title: string): Article {
   const locale = (name: string): { title: string; description: string; markdown: string } => ({
@@ -16,7 +20,7 @@ function article(slug: string, tags: string[], title: string): Article {
     en: locale(title),
     es: locale(title),
   };
-  return { slug, date: "2026-09-24", tags, locales: titles };
+  return { slug, date: "2026-09-24", tags: tags.map(tag), locales: titles };
 }
 
 const articles = [
@@ -35,7 +39,7 @@ function renderFilters(query = "", selectedTags: string[] = []) {
             dateFrom=""
             dateTo=""
             selectedTags={selectedTags}
-            availableTags={["AI", "Product", "Lideranca"]}
+            availableTags={["AI", "Product", "Lideranca"].map(tag)}
             onQueryChange={() => {}}
             onDateFromChange={() => {}}
             onDateToChange={() => {}}
@@ -72,7 +76,7 @@ describe("ArticleFilters tag badges", () => {
               dateFrom=""
               dateTo=""
               selectedTags={["Product"]}
-              availableTags={["AI", "Product", "Lideranca"]}
+              availableTags={["AI", "Product", "Lideranca"].map(tag)}
               onQueryChange={() => {}}
               onDateFromChange={() => {}}
               onDateToChange={() => {}}
