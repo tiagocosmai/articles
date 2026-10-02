@@ -88,6 +88,7 @@ export function ArticlePage({ content }: { content: LoadedContent }) {
           }}
         >
           <ArticleFilters
+            articles={content.articles}
             query={query}
             dateFrom={dateFrom}
             dateTo={dateTo}

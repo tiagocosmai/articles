@@ -34,6 +34,12 @@ describe("Article", () => {
     localStorage.clear();
   });
 
+  it("does not show the list count or sort controls", () => {
+    renderAt("/o-agente-secreto");
+    expect(screen.queryByText("2 de 2 artigos")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Ordenar por")).not.toBeInTheDocument();
+  });
+
   it("shows the markdown, flips a card, and opens the home tag filter", async () => {
     const user = userEvent.setup();
     renderAt("/o-agente-secreto");

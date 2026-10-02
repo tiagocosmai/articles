@@ -1,8 +1,10 @@
 import type { Article, ArticleTag, Locale } from "../types/content";
 import {
   collectTags,
+  countArticlesForTag,
   filterArticles,
   formatArticleDate,
+  tagBadgeText,
   tagLabel,
 } from "./filterArticles";
 
@@ -72,8 +74,8 @@ const b = article({
 const articles = [b, a];
 
 describe("filterArticles", () => {
-  it("returns a then b for empty filters (date desc, slug asc)", () => {
-    expect(filterArticles(articles, "en", emptyFilters)).toEqual([a, b]);
+  it("preserves input order", () => {
+    expect(filterArticles(articles, "en", emptyFilters)).toEqual([b, a]);
   });
 
   it("matches query beta only on the Beta title, case-insensitive, active locale only", () => {
@@ -117,13 +119,13 @@ describe("filterArticles", () => {
         dateFrom: "2026-09-01",
         dateTo: "2026-09-24",
       }),
-    ).toEqual([a, b]);
+    ).toEqual([b, a]);
   });
 
   it("returns articles that have AI when tags is [AI]", () => {
     expect(
       filterArticles(articles, "en", { ...emptyFilters, tags: ["AI"] }),
-    ).toEqual([a, b]);
+    ).toEqual([b, a]);
   });
 
   it("returns only articles that have both AI and Lideranca", () => {
@@ -145,6 +147,32 @@ describe("filterArticles", () => {
 describe("formatArticleDate", () => {
   it('formats 2026-09-24 in pt as "24 de setembro de 2026"', () => {
     expect(formatArticleDate("2026-09-24", "pt")).toBe("24 de setembro de 2026");
+  });
+});
+
+describe("countArticlesForTag", () => {
+  it("counts articles that already match and also have the tag", () => {
+    expect(countArticlesForTag(articles, "en", emptyFilters, "AI")).toBe(2);
+    expect(countArticlesForTag(articles, "en", emptyFilters, "Product")).toBe(1);
+    expect(
+      countArticlesForTag(articles, "en", { ...emptyFilters, query: "beta" }, "Product"),
+    ).toBe(0);
+  });
+
+  it("keeps an already selected tag in the count", () => {
+    expect(countArticlesForTag(articles, "en", { ...emptyFilters, tags: ["AI"] }, "AI")).toBe(2);
+    expect(
+      countArticlesForTag(articles, "en", { ...emptyFilters, tags: ["AI"] }, "Product"),
+    ).toBe(1);
+  });
+});
+
+describe("tagBadgeText", () => {
+  it("hides zero, shows the number, and caps above 99", () => {
+    expect(tagBadgeText(0)).toBeNull();
+    expect(tagBadgeText(1)).toBe("1");
+    expect(tagBadgeText(99)).toBe("99");
+    expect(tagBadgeText(100)).toBe("+99");
   });
 });
 

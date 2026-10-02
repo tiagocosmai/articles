@@ -46,16 +46,6 @@ export function filterArticles(
       }
 
       return true;
-    })
-    .slice()
-    .sort((left, right) => {
-      if (left.date !== right.date) {
-        return left.date < right.date ? 1 : -1;
-      }
-      if (left.slug === right.slug) {
-        return 0;
-      }
-      return left.slug < right.slug ? -1 : 1;
     });
 }
 
@@ -88,4 +78,24 @@ export function collectTags(articles: Article[]): ArticleTag[] {
   }
 
   return tags;
+}
+
+export function countArticlesForTag(
+  articles: Article[],
+  locale: Locale,
+  filters: ArticleFilters,
+  tag: string,
+): number {
+  const tags = filters.tags.includes(tag) ? filters.tags : [...filters.tags, tag];
+  return filterArticles(articles, locale, { ...filters, tags }).length;
+}
+
+export function tagBadgeText(count: number): string | null {
+  if (count <= 0) {
+    return null;
+  }
+  if (count > 99) {
+    return "+99";
+  }
+  return String(count);
 }
