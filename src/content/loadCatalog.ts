@@ -1,27 +1,13 @@
-import catalog from "../../data/articles.json";
+import fs from "fs";
+import path from "path";
 import type { CatalogError, Flashcard, LoadedContent } from "../types/content";
 import { validateCatalog } from "./validateCatalog";
 
-const markdownModules = import.meta.glob<string>("../../data/articles/*.md", {
-  query: "?raw",
-  import: "default",
-  eager: true,
-});
+const dataDir = path.join(process.cwd(), "data");
+const articlesDir = path.join(dataDir, "articles");
 
-const flashcardModules = import.meta.glob("../../data/articles/*.json", {
-  import: "default",
-  eager: true,
-});
-
-function basenameMap<T>(modules: Record<string, T>): Record<string, T> {
-  const mapped: Record<string, T> = {};
-  for (const [path, value] of Object.entries(modules)) {
-    const name = path.split("/").pop();
-    if (name) {
-      mapped[name] = value;
-    }
-  }
-  return mapped;
+function readJson(filePath: string): unknown {
+  return JSON.parse(fs.readFileSync(filePath, "utf8")) as unknown;
 }
 
 function isNonEmptyText(value: unknown): value is string {
@@ -61,8 +47,19 @@ function validFlashcards(raw: unknown): Flashcard[] | undefined {
 }
 
 export function loadCatalog(): LoadedContent {
-  const markdown = basenameMap(markdownModules);
-  const flashcardFiles = basenameMap(flashcardModules);
+  const catalog = readJson(path.join(dataDir, "articles.json"));
+  const markdown: Record<string, string> = {};
+  const flashcardFiles: Record<string, unknown> = {};
+
+  for (const name of fs.readdirSync(articlesDir)) {
+    const fullPath = path.join(articlesDir, name);
+    if (name.endsWith(".md")) {
+      markdown[name] = fs.readFileSync(fullPath, "utf8");
+    } else if (name.endsWith(".json")) {
+      flashcardFiles[name] = readJson(fullPath);
+    }
+  }
+
   const { articles, errors } = validateCatalog(catalog, {
     markdown,
     flashcards: flashcardFiles,

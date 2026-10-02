@@ -8,6 +8,10 @@ body,
   height: 100%;
 }
 
+body {
+  margin: 0;
+}
+
 .article-body h1 { @apply mb-4 font-mono text-3xl leading-tight; }
 .article-body h2 { @apply mb-3 mt-8 font-mono text-2xl leading-snug; }
 .article-body p { @apply mb-4 leading-relaxed; }
