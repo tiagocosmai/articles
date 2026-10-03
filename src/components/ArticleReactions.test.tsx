@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { LocaleProvider } from "../context/LocaleContext";
+import { ThemeProvider } from "../context/ThemeContext";
 import { ArticleReactions } from "./ArticleReactions";
 
 const types = ["like", "celebrate", "support", "love", "insightful", "funny"] as const;
@@ -16,18 +17,26 @@ const summary = {
 function renderReactions(signedIn: boolean) {
   localStorage.setItem("articles-locale", "pt");
   return render(
-    <LocaleProvider>
-      <ArticleReactions slug="o-agente-secreto" summary={summary} signedIn={signedIn} />
-    </LocaleProvider>,
+    <ThemeProvider>
+      <LocaleProvider>
+        <ArticleReactions slug="o-agente-secreto" summary={summary} signedIn={signedIn} />
+      </LocaleProvider>
+    </ThemeProvider>,
   );
 }
 
-it("shows the six reactions and the pressed like count", () => {
+it("shows a pressed like icon and opens the reaction choices", async () => {
+  const user = userEvent.setup();
   renderReactions(true);
-  expect(screen.getAllByRole("button")).toHaveLength(6);
   const like = screen.getByRole("button", { name: "Gostei" });
-  expect(like).toHaveTextContent("2");
   expect(like).toHaveAttribute("aria-pressed", "true");
+  expect(screen.queryByRole("button", { name: "Parabéns" })).not.toBeInTheDocument();
+  await user.click(like);
+  expect(screen.getByRole("button", { name: "Parabéns" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Apoio" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Amei" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Genial" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Divertido" })).toBeInTheDocument();
 });
 
 it("asks a signed-out reader to sign in", async () => {
@@ -46,7 +55,7 @@ it("asks a signed-out reader to sign in", async () => {
   const user = userEvent.setup();
   renderReactions(false);
   await user.click(screen.getByRole("button", { name: "Gostei" }));
-  expect(window.location.href).toBe("/api/auth/signin?callbackUrl=/o-agente-secreto");
+  expect(window.location.href).toBe("/api/auth/signin?callbackUrl=%2Fo-agente-secreto");
 });
 
 it("opens sign-in in the top window when the blog is embedded", async () => {
@@ -61,7 +70,7 @@ it("opens sign-in in the top window when the blog is embedded", async () => {
   renderReactions(false);
   await user.click(screen.getByRole("button", { name: "Gostei" }));
   expect(top.location.href).toBe(
-    "https://tiagocosmai-articles.vercel.app/api/auth/signin?callbackUrl=/o-agente-secreto",
+    "https://tiagocosmai-articles.vercel.app/api/auth/signin?callbackUrl=https%3A%2F%2Ftiagocosmai.github.io%2Fpt%2Fblog%2Fo-agente-secreto",
   );
   Object.defineProperty(window, "top", { configurable: true, value: originalTop });
 });

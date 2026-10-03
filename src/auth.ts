@@ -1,6 +1,7 @@
 import NextAuth from "next-auth";
 import GitHub from "next-auth/providers/github";
 import LinkedIn from "next-auth/providers/linkedin";
+import { authReturnUrl } from "./authReturn";
 import { getDb } from "./db/client";
 import { signInIdentity } from "./db/users";
 
@@ -30,6 +31,9 @@ export const { handlers, auth } = NextAuth({
     LinkedIn({ clientId: process.env.LINKEDIN_ID, clientSecret: process.env.LINKEDIN_SECRET }),
   ],
   callbacks: {
+    async redirect({ url, baseUrl }) {
+      return authReturnUrl(url, baseUrl);
+    },
     async signIn({ user, account, profile }) {
       if (!account || (account.provider !== "github" && account.provider !== "linkedin")) return false;
       const current = await auth();
