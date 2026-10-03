@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { BlogLink } from "../components/BlogLink";
 import { ArticleFilters } from "../components/ArticleFilters";
+import { ArticleReactions } from "../components/ArticleReactions";
 import { ArticleShare } from "../components/ArticleShare";
 import { BlogColumns } from "../components/BlogColumns";
 import { FlashcardDeck } from "../components/FlashcardDeck";
@@ -128,6 +129,7 @@ export function ArticlePage({ content }: { content: LoadedContent }) {
               markdown={typeof markdown === "string" ? markdown : ""}
             />
           </header>
+          <ArticleReactions slug={article.slug} />
           {typeof markdown === "string" ? (
             <MarkdownBody markdown={markdown} />
           ) : (
