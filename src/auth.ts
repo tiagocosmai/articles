@@ -29,6 +29,7 @@ const sessionMaxAge = 60 * 24 * 60 * 60;
 
 export const { handlers, auth } = NextAuth({
   secret: process.env.AUTH_SECRET,
+  trustHost: true,
   session: { strategy: "jwt", maxAge: sessionMaxAge },
   providers: [
     GitHub({ clientId: process.env.GITHUB_ID, clientSecret: process.env.GITHUB_SECRET }),

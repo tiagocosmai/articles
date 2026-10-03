@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocale } from "../context/LocaleContext";
 import { useTheme } from "../context/ThemeContext";
-import { articleShareUrl, portfolioShareOrigin } from "../share/articleShareUrl";
+import { allowLoginCookie, readSignedIn } from "../auth/browserSession";
+import { LoginPrompt } from "./LoginPrompt";
 
 type ReactionSummary = {
   reactions: { type: string; count: number; mine: boolean }[];
@@ -29,11 +30,12 @@ export function ArticleReactions({
   summary?: ReactionSummary;
   signedIn?: boolean;
 }) {
-  const { locale, t } = useLocale();
+  const { t } = useLocale();
   const { mode } = useTheme();
   const [summary, setSummary] = useState(providedSummary);
   const [signedIn, setSignedIn] = useState(providedSignedIn ?? false);
   const [open, setOpen] = useState(false);
+  const [loginOpen, setLoginOpen] = useState(false);
   const closeTimer = useRef<number | null>(null);
 
   function showPicker() {
@@ -55,15 +57,12 @@ export function ArticleReactions({
     if (providedSummary && providedSignedIn !== undefined) return;
     let cancelled = false;
     void (async () => {
-      const [reactionsResponse, sessionResponse] = await Promise.all([
-        fetch(`/api/articles/${slug}/reactions`),
-        fetch("/api/auth/session"),
-      ]);
+      const reactionsResponse = await fetch(`/api/articles/${slug}/reactions`);
       const next = (await reactionsResponse.json()) as ReactionSummary;
-      const session = (await sessionResponse.json()) as { userId?: string };
       if (cancelled) return;
+      await allowLoginCookie();
       setSummary(next);
-      setSignedIn(Boolean(session.userId));
+      setSignedIn(await readSignedIn());
     })();
     return () => {
       cancelled = true;
@@ -77,48 +76,17 @@ export function ArticleReactions({
   const buttonClass =
     mode === "dark" ? "border-brand/40 text-brand" : "border-brand-light/40 text-brand-light";
 
-  function goToSignIn() {
-    const embedded = window.top !== null && window.top !== window.self;
-    const callbackUrl = embedded
-      ? articleShareUrl(slug, portfolioShareOrigin(), locale)
-      : `/${slug}`;
-    const path = `/api/auth/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`;
-    if (embedded && window.top) {
-      window.top.location.href = new URL(path, window.location.origin).href;
-      return;
-    }
-    window.location.href = path;
-  }
-
   async function refreshSignedIn() {
-    const storage = document as Document & {
-      hasStorageAccess?: () => Promise<boolean>;
-      requestStorageAccess?: () => Promise<void>;
-    };
-    if (window.top !== null && window.top !== window.self && storage.requestStorageAccess) {
-      try {
-        const allowed = storage.hasStorageAccess ? await storage.hasStorageAccess() : false;
-        if (!allowed) await storage.requestStorageAccess();
-      } catch {
-        /* The reader declined cookie access. */
-      }
-    }
-    try {
-      const session = (await (await fetch("/api/auth/session")).json()) as { userId?: string };
-      const next = Boolean(session.userId);
-      setSignedIn(next);
-      return next;
-    } catch {
-      return false;
-    }
+    await allowLoginCookie();
+    const next = await readSignedIn();
+    setSignedIn(next);
+    if (!next) setLoginOpen(true);
+    return next;
   }
 
   async function press(type: string, alreadyMine: boolean) {
     setOpen(false);
-    if (!signedIn && !(await refreshSignedIn())) {
-      goToSignIn();
-      return;
-    }
+    if (!signedIn && !(await refreshSignedIn())) return;
     const response = alreadyMine
       ? await fetch(`/api/articles/${slug}/reactions/${type}`, { method: "DELETE" })
       : await fetch(`/api/articles/${slug}/reactions`, {
@@ -131,6 +99,7 @@ export function ArticleReactions({
   }
 
   return (
+    <>
     <div className="relative" onMouseEnter={showPicker} onMouseLeave={hidePicker}>
       {open ? (
         <div className="absolute bottom-[calc(100%-4px)] left-1/2 z-20 -translate-x-1/2 px-3 pb-1">
@@ -167,7 +136,7 @@ export function ArticleReactions({
         title={t(`reaction_${mine?.type ?? "like"}`)}
         onClick={() => {
           if (!signedIn) {
-            goToSignIn();
+            void refreshSignedIn();
             return;
           }
           showPicker();
@@ -178,6 +147,13 @@ export function ArticleReactions({
         <ReactionIcon type={active} />
       </button>
     </div>
+    <LoginPrompt
+      open={loginOpen}
+      slug={slug}
+      onClose={() => setLoginOpen(false)}
+      onSignedIn={() => setSignedIn(true)}
+    />
+    </>
   );
 }
 
