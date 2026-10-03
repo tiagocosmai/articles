@@ -27,8 +27,13 @@ const content: LoadedContent = {
 
 const types = ["like", "celebrate", "support", "love", "insightful", "funny"];
 
-function count(body: { reactions: { type: string; count: number; mine: boolean }[] }, type: string) {
-  return body.reactions.find((reaction) => reaction.type === type);
+function count(
+  body: { reactions?: { type: string; count: number; mine: boolean }[] },
+  type: string,
+) {
+  const match = body.reactions?.find((reaction) => reaction.type === type);
+  if (!match) throw new Error(`missing ${type}`);
+  return match;
 }
 
 it("stores one active reaction of each type and restores it after delete", async () => {
@@ -46,6 +51,7 @@ it("stores one active reaction of each type and restores it after delete", async
 
   const anonymous = await getReactions(db, "o-agente-secreto", null);
   expect(anonymous.status).toBe(200);
+  if (anonymous.status !== 200) throw new Error("expected reactions");
   expect(anonymous.body.reactions.map((reaction) => reaction.type)).toEqual(types);
   expect(anonymous.body.reactions.every((reaction) => reaction.count === 0 && reaction.mine === false)).toBe(true);
 
