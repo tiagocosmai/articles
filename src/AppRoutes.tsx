@@ -2,6 +2,7 @@ import { Route, Routes } from "react-router-dom";
 import { useTheme } from "./context/ThemeContext";
 import { useEmbedBridge } from "./embed/useEmbedBridge";
 import { useEmbedLocation } from "./embed/useEmbedLocation";
+import { LoginCookies } from "./components/LoginCookies";
 import { ArticlePage } from "./screens/ArticlePage";
 import { HomePage } from "./screens/HomePage";
 import { NotFoundPage } from "./screens/NotFoundPage";
@@ -23,6 +24,7 @@ function AppShell({ content }: { content: LoadedContent }) {
       className={`flex h-full min-h-full flex-col ${themeClass}`}
     >
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
+        <LoginCookies />
         <Routes>
           <Route path="/" element={<HomePage content={content} />} />
           <Route path="/:slug" element={<ArticlePage content={content} />} />
