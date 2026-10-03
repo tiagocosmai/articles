@@ -1,27 +1,27 @@
-import { auth } from "../../../../../src/auth";
 import { getReactions, postReaction, type ReaderSession } from "../../../../../src/api/reactions";
+import { readSessionId } from "../../../../../src/auth/visitor";
 import { getDb } from "../../../../../src/db/client";
+import { findVisitor } from "../../../../../src/db/users";
 
 export const runtime = "nodejs";
 
-async function reader(): Promise<ReaderSession> {
-  const session = await auth();
-  if (!session?.userId || (session.role !== "admin" && session.role !== "member")) return null;
-  return { id: session.userId, role: session.role, name: session.user?.name ?? "" };
+async function reader(request: Request): Promise<ReaderSession> {
+  const sessionId = readSessionId(request.headers.get("cookie"));
+  if (!sessionId) return null;
+  const visitor = await findVisitor(getDb(), sessionId);
+  if (!visitor) return null;
+  return { id: visitor.userId, role: visitor.role, name: visitor.name };
 }
 
-export async function GET(_request: Request, context: { params: Promise<{ slug: string }> }) {
+export async function GET(request: Request, context: { params: Promise<{ slug: string }> }) {
   const { slug } = await context.params;
-  const result = await getReactions(getDb(), slug, await reader());
+  const result = await getReactions(getDb(), slug, await reader(request));
   return Response.json(result.body, { status: result.status });
 }
 
 export async function POST(request: Request, context: { params: Promise<{ slug: string }> }) {
   const { slug } = await context.params;
-  const body = (await request.json()) as { type?: string; name?: string; email?: string };
-  const result = await postReaction(getDb(), slug, await reader(), body.type ?? "", {
-    name: body.name,
-    email: body.email,
-  });
+  const body = (await request.json()) as { type?: string };
+  const result = await postReaction(getDb(), slug, readSessionId(request.headers.get("cookie")), body.type ?? "");
   return Response.json(result.body, { status: result.status });
 }

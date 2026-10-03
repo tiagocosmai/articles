@@ -14,8 +14,14 @@ const comment = {
   mine: false,
 };
 
+function clearCookies() {
+  for (const name of ["articles-session", "articles-name", "articles-email"]) {
+    document.cookie = `${name}=; Path=/; Max-Age=0`;
+  }
+}
+
 function renderComments() {
-  sessionStorage.clear();
+  clearCookies();
   localStorage.setItem("articles-locale", "pt");
   return render(
     <ThemeProvider>
@@ -26,41 +32,34 @@ function renderComments() {
   );
 }
 
-function mockFetch(options: {
-  signedIn?: boolean;
-  comments?: unknown[];
-  createdStatus?: "pending" | "approved";
-}) {
-  const comments = [...(options.comments ?? [])];
+function mockFetch(comments: unknown[] = []) {
+  const stored = [...comments];
   vi.stubGlobal(
     "fetch",
     vi.fn(async (input: RequestInfo, init?: RequestInit) => {
       const url = String(input);
       if (init?.method === "POST") {
-        const payload = JSON.parse(String(init.body)) as { body: string; parentId: string | null; email?: string };
+        const payload = JSON.parse(String(init.body)) as { body: string; parentId: string | null };
         const created = {
           id: "new",
           body: payload.body,
-          status: options.createdStatus ?? (payload.email ? "pending" : "approved"),
+          status: "pending" as const,
           parentId: payload.parentId,
           userName: "Ada",
           createdAt: "2026-10-03T15:04:00.000Z",
           mine: true,
         };
-        comments.push(created);
+        stored.push(created);
         return { ok: true, json: async () => created };
       }
-      if (url.includes("/comments")) return { ok: true, json: async () => ({ comments }) };
-      if (url.includes("/methods")) {
-        return { ok: true, json: async () => ({ methods: [{ id: "github" }, { id: "gmail" }, { id: "magiclink" }] }) };
-      }
-      return { ok: true, json: async () => (options.signedIn ? { userId: "user-1" } : {}) };
+      if (url.includes("/comments")) return { ok: true, json: async () => ({ comments: stored }) };
+      return { ok: true, json: async () => ({}) };
     }),
   );
 }
 
 it("shows the text as written and counts the characters still available", async () => {
-  mockFetch({ comments: [comment] });
+  mockFetch([comment]);
   const { container } = renderComments();
   const user = userEvent.setup();
   expect(await screen.findByText(comment.body)).toBeInTheDocument();
@@ -70,87 +69,43 @@ it("shows the text as written and counts the characters still available", async 
   expect(screen.getByText("998 restantes")).toBeInTheDocument();
 });
 
-it("publishes an approved comment without the moderation notice", async () => {
-  mockFetch({ signedIn: true, createdStatus: "approved" });
+it("asks for a name and email, stores them, and sends the comment to moderation", async () => {
+  mockFetch();
   renderComments();
   const user = userEvent.setup();
-  await user.type(await screen.findByRole("textbox", { name: "Escreva um comentário" }), "Olá");
-  await user.click(screen.getByRole("button", { name: "Publicar" }));
-  expect(await screen.findByText("Olá")).toBeInTheDocument();
-  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  expect(screen.queryByRole("dialog", { name: "Entre para participar" })).not.toBeInTheDocument();
+  await user.type(await screen.findByRole("textbox", { name: "Nome" }), "Ada");
+  await user.type(screen.getByRole("textbox", { name: "E-mail" }), "ada@example.com");
+  await user.type(screen.getByRole("textbox", { name: "Escreva um comentário" }), "Olá");
+  await user.click(screen.getByRole("button", { name: "Enviar para moderação" }));
+  expect(await screen.findByText("Seu comentário ficará visível assim que a moderação for concluída.")).toBeInTheDocument();
+  expect(screen.getByText("Olá")).toBeInTheDocument();
+  expect(document.cookie).toContain("articles-name=Ada");
+  expect(document.cookie).toContain("articles-email=ada%40example.com");
+  expect(document.cookie).toMatch(/articles-session=[0-9a-f-]{36}/i);
 });
 
-it("warns that a pending comment waits for moderation", async () => {
-  mockFetch({ signedIn: true, createdStatus: "pending" });
-  renderComments();
-  const user = userEvent.setup();
-  await user.type(await screen.findByRole("textbox", { name: "Escreva um comentário" }), "Olá");
-  await user.click(screen.getByRole("button", { name: "Publicar" }));
-  expect(await screen.findByRole("dialog")).toHaveTextContent(
-    "Seu comentário ficará visível assim que a moderação for concluída.",
+it("refills the name and email from cookies", async () => {
+  mockFetch();
+  document.cookie = "articles-name=Ada; Path=/";
+  document.cookie = "articles-email=ada%40example.com; Path=/";
+  render(
+    <ThemeProvider>
+      <LocaleProvider>
+        <ArticleComments slug="o-agente-secreto" />
+      </LocaleProvider>
+    </ThemeProvider>,
   );
+  expect(await screen.findByRole("textbox", { name: "Nome" })).toHaveValue("Ada");
+  expect(screen.getByRole("textbox", { name: "E-mail" })).toHaveValue("ada@example.com");
 });
 
 it("offers one reply level under a comment", async () => {
-  mockFetch({
-    signedIn: true,
-    comments: [comment, { ...comment, id: "c2", parentId: "c1", body: "Resposta", userName: "Grace" }],
-  });
+  mockFetch([comment, { ...comment, id: "c2", parentId: "c1", body: "Resposta", userName: "Grace" }]);
   renderComments();
   const user = userEvent.setup();
   expect(await screen.findByText("Resposta")).toBeInTheDocument();
   expect(screen.getAllByRole("button", { name: "Responder" })).toHaveLength(1);
   await user.click(screen.getByRole("button", { name: "Responder" }));
   expect(screen.getByRole("textbox", { name: "Escreva uma resposta" })).toBeInTheDocument();
-});
-
-it("explains why a signed-out reader needs to sign in", async () => {
-  mockFetch({ signedIn: false });
-  const open = vi.spyOn(window, "open").mockReturnValue({ closed: true } as Window);
-  renderComments();
-  const user = userEvent.setup();
-  await user.click(await screen.findByRole("button", { name: "Entrar para comentar" }));
-  expect(await screen.findByRole("dialog", { name: "Entre para participar" })).toHaveTextContent(
-    "Um cookie guarda a sessão",
-  );
-  await user.click(screen.getByRole("button", { name: "Continuar com GitHub" }));
-  expect(String(open.mock.calls[0]?.[0])).toContain("/auth/start?provider=github&next=%2Fo-agente-secreto");
-  expect(screen.queryByRole("button", { name: "Continuar com LinkedIn" })).not.toBeInTheDocument();
-  open.mockRestore();
-});
-
-it("sends a name and email to moderation when the reader does not sign in", async () => {
-  mockFetch({ signedIn: false });
-  renderComments();
-  const user = userEvent.setup();
-  await user.type(await screen.findByRole("textbox", { name: "Escreva um comentário" }), "Olá");
-  await user.click(screen.getByRole("button", { name: "Entrar para comentar" }));
-  await user.click(await screen.findByRole("button", { name: "Continuar sem entrar" }));
-  await user.type(screen.getByRole("textbox", { name: "Nome" }), "Ada");
-  await user.type(screen.getByRole("textbox", { name: "E-mail" }), "ada@example.com");
-  await user.click(screen.getByRole("button", { name: "Enviar para moderação" }));
-  expect(await screen.findByText("Seu comentário ficará visível assim que a moderação for concluída.")).toBeInTheDocument();
-  expect(screen.getByText("Olá")).toBeInTheDocument();
-});
-
-it("closes the login dialog when the browser session is signed in", async () => {
-  let signed = false;
-  vi.stubGlobal(
-    "fetch",
-    vi.fn(async (input: RequestInfo) => {
-      const url = String(input);
-      if (url.includes("/comments")) return { ok: true, json: async () => ({ comments: [] }) };
-      if (url.includes("/methods")) return { ok: true, json: async () => ({ methods: [{ id: "github" }] }) };
-      if (signed) return { ok: true, json: async () => ({ userId: "user-1" }) };
-      return { ok: true, json: async () => ({}) };
-    }),
-  );
-  renderComments();
-  const user = userEvent.setup();
-  await user.click(await screen.findByRole("button", { name: "Entrar para comentar" }));
-  expect(await screen.findByRole("dialog", { name: "Entre para participar" })).toBeInTheDocument();
-  signed = true;
-  window.dispatchEvent(new StorageEvent("storage", { key: "tiagocosmai-auth", newValue: "1" }));
-  expect(await screen.findByRole("button", { name: "Publicar" })).toBeInTheDocument();
-  expect(screen.queryByRole("dialog", { name: "Entre para participar" })).not.toBeInTheDocument();
 });

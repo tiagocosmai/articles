@@ -3,9 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocale } from "../context/LocaleContext";
 import { useTheme } from "../context/ThemeContext";
-import { allowLoginCookie, readSignedIn } from "../auth/browserSession";
-import { readGuestContact, writeGuestContact, type GuestContact } from "../auth/guest";
-import { LoginPrompt } from "./LoginPrompt";
+import { ensureSessionId } from "../auth/visitor";
 
 type ReactionSummary = {
   reactions: { type: string; count: number; mine: boolean }[];
@@ -22,24 +20,12 @@ const reactionColor: Record<(typeof reactionTypes)[number], string> = {
   funny: "#44bfd3",
 };
 
-export function ArticleReactions({
-  slug,
-  summary: providedSummary,
-  signedIn: providedSignedIn,
-}: {
-  slug: string;
-  summary?: ReactionSummary;
-  signedIn?: boolean;
-}) {
+export function ArticleReactions({ slug, summary: providedSummary }: { slug: string; summary?: ReactionSummary }) {
   const { t } = useLocale();
   const { mode } = useTheme();
   const [summary, setSummary] = useState(providedSummary);
-  const [signedIn, setSignedIn] = useState(providedSignedIn ?? false);
   const [open, setOpen] = useState(false);
-  const [loginOpen, setLoginOpen] = useState(false);
-  const [guest, setGuest] = useState<GuestContact | null>(null);
   const closeTimer = useRef<number | null>(null);
-  const pendingType = useRef<string | null>(null);
 
   function showPicker() {
     if (closeTimer.current !== null) window.clearTimeout(closeTimer.current);
@@ -51,90 +37,48 @@ export function ArticleReactions({
   }
 
   useEffect(() => {
-    setGuest(readGuestContact());
-  }, []);
-
-  useEffect(() => {
     return () => {
       if (closeTimer.current !== null) window.clearTimeout(closeTimer.current);
     };
   }, []);
 
   useEffect(() => {
-    if (providedSummary && providedSignedIn !== undefined) return;
+    if (providedSummary) return;
     let cancelled = false;
     void (async () => {
+      ensureSessionId();
       const reactionsResponse = await fetch(`/api/articles/${slug}/reactions`);
       const next = (await reactionsResponse.json()) as ReactionSummary;
-      if (cancelled) return;
-      await allowLoginCookie();
-      setSummary(next);
-      setSignedIn(await readSignedIn());
+      if (!cancelled) setSummary(next);
     })();
     return () => {
       cancelled = true;
     };
-  }, [providedSignedIn, providedSummary, slug]);
+  }, [providedSummary, slug]);
 
   if (!summary) return null;
 
   const mine = summary.reactions.find((reaction) => reaction.mine);
   const active = reactionTypes.find((type) => type === mine?.type) ?? "like";
+  const activeCount = summary.reactions.find((reaction) => reaction.type === active)?.count ?? 0;
   const buttonClass =
     mode === "dark" ? "border-brand/40 text-brand" : "border-brand-light/40 text-brand-light";
 
-  function acceptGuest(contact: GuestContact) {
-    writeGuestContact(contact);
-    setGuest(contact);
-    setLoginOpen(false);
-    const type = pendingType.current;
-    pendingType.current = null;
-    if (type) void press(type, false, contact, false);
-  }
-
-  function acceptSignIn() {
-    setSignedIn(true);
-    setLoginOpen(false);
-    const type = pendingType.current;
-    pendingType.current = null;
-    if (type) void press(type, false, null, true);
-  }
-
-  async function refreshSignedIn() {
-    await allowLoginCookie();
-    const next = await readSignedIn();
-    setSignedIn(next);
-    if (!next) setLoginOpen(true);
-    return next;
-  }
-
-  async function press(type: string, alreadyMine: boolean, asGuest = guest, asSignedIn = signedIn) {
+  async function press(type: string, alreadyMine: boolean) {
     setOpen(false);
-    if (!asSignedIn && !asGuest) {
-      if (await refreshSignedIn()) {
-        asSignedIn = true;
-      } else {
-        pendingType.current = type;
-        return;
-      }
-    }
+    ensureSessionId();
     const response = alreadyMine
       ? await fetch(`/api/articles/${slug}/reactions/${type}`, { method: "DELETE" })
       : await fetch(`/api/articles/${slug}/reactions`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            type,
-            name: asSignedIn ? undefined : asGuest?.name,
-            email: asSignedIn ? undefined : asGuest?.email,
-          }),
+          body: JSON.stringify({ type }),
         });
     if (!response.ok) return;
     setSummary((await (await fetch(`/api/articles/${slug}/reactions`)).json()) as ReactionSummary);
   }
 
   return (
-    <>
     <div className="relative" onMouseEnter={showPicker} onMouseLeave={hidePicker}>
       {open ? (
         <div className="absolute bottom-[calc(100%-4px)] left-1/2 z-20 -translate-x-1/2 px-3 pb-1">
@@ -145,13 +89,14 @@ export function ArticleReactions({
           >
             {reactionTypes.map((type) => {
               const reaction = summary.reactions.find((item) => item.type === type);
+              const label = t(`reaction_${type}`);
               return (
                 <button
                   key={type}
                   type="button"
-                  aria-label={t(`reaction_${type}`)}
+                  aria-label={label}
                   aria-pressed={reaction?.mine ?? false}
-                  title={t(`reaction_${type}`)}
+                  title={`${label} · ${reaction?.count ?? 0}`}
                   onClick={() => void press(type, Boolean(reaction?.mine))}
                   className="inline-flex h-8 w-8 items-center justify-center rounded-full text-white"
                   style={{ backgroundColor: reactionColor[type] }}
@@ -168,29 +113,14 @@ export function ArticleReactions({
         aria-label={t(`reaction_${mine?.type ?? "like"}`)}
         aria-pressed={Boolean(mine)}
         aria-expanded={open}
-        title={t(`reaction_${mine?.type ?? "like"}`)}
-        onClick={() => {
-          if (!signedIn && !guest) {
-            pendingType.current = active;
-            void refreshSignedIn();
-            return;
-          }
-          showPicker();
-        }}
+        title={`${t(`reaction_${active}`)} · ${activeCount}`}
+        onClick={showPicker}
         className={`inline-flex h-8 w-8 items-center justify-center rounded-md border ${buttonClass}`}
         style={mine ? { color: reactionColor[active] } : undefined}
       >
         <ReactionIcon type={active} />
       </button>
     </div>
-    <LoginPrompt
-      open={loginOpen}
-      slug={slug}
-      onClose={() => setLoginOpen(false)}
-      onSignedIn={acceptSignIn}
-      onGuest={acceptGuest}
-    />
-    </>
   );
 }
 

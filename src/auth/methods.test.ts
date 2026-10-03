@@ -1,10 +1,15 @@
 import { authMethodConfigured, enabledAuthMethods, storedAuthMethod } from "./methods";
 
-it("turns on GitHub, Gmail, and magic link, and leaves Microsoft and LinkedIn out", () => {
-  expect(enabledAuthMethods(undefined)).toEqual(["github", "gmail", "magiclink"]);
-  expect(enabledAuthMethods("")).toEqual(["github", "gmail", "magiclink"]);
+it("keeps every login method off until login is explicitly enabled", () => {
+  const previous = process.env.AUTH_LOGIN;
+  delete process.env.AUTH_LOGIN;
+  expect(enabledAuthMethods("GITHUB,GMAIL,MAGICLINK,MICROSOFT")).toEqual([]);
+  process.env.AUTH_LOGIN = "true";
+  expect(enabledAuthMethods("GITHUB,GMAIL,MAGICLINK")).toEqual(["github", "gmail", "magiclink"]);
   expect(enabledAuthMethods("LINKEDIN, github")).toEqual(["github", "linkedin"]);
   expect(enabledAuthMethods("nope")).toEqual([]);
+  if (previous === undefined) delete process.env.AUTH_LOGIN;
+  else process.env.AUTH_LOGIN = previous;
 });
 
 it("maps Auth.js ids back to the configured method", () => {

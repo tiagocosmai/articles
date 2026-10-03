@@ -14,12 +14,12 @@ const summary = {
   })),
 };
 
-function renderReactions(signedIn: boolean) {
+function renderReactions() {
   localStorage.setItem("articles-locale", "pt");
   return render(
     <ThemeProvider>
       <LocaleProvider>
-        <ArticleReactions slug="o-agente-secreto" summary={summary} signedIn={signedIn} />
+        <ArticleReactions slug="o-agente-secreto" summary={summary} />
       </LocaleProvider>
     </ThemeProvider>,
   );
@@ -27,24 +27,17 @@ function renderReactions(signedIn: boolean) {
 
 it("shows a pressed like icon and opens the reaction choices", async () => {
   const user = userEvent.setup();
-  renderReactions(true);
+  renderReactions();
   const like = screen.getByRole("button", { name: "Gostei" });
   expect(like).toHaveAttribute("aria-pressed", "true");
+  expect(like).toHaveAttribute("title", "Gostei · 2");
   expect(screen.queryByRole("button", { name: "Parabéns" })).not.toBeInTheDocument();
   await user.hover(like);
-  expect(screen.getByRole("button", { name: "Parabéns" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Parabéns" })).toHaveAttribute("title", "Parabéns · 0");
   await user.click(like);
-  expect(screen.getByRole("button", { name: "Apoio" })).toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "Amei" })).toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "Genial" })).toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "Divertido" })).toBeInTheDocument();
-});
-
-it("explains why a signed-out reader needs to sign in", async () => {
-  const user = userEvent.setup();
-  renderReactions(false);
-  await user.click(screen.getByRole("button", { name: "Gostei" }));
-  expect(await screen.findByRole("dialog", { name: "Entre para participar" })).toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "Continuar com GitHub" })).toBeInTheDocument();
-  expect(screen.queryByRole("button", { name: "Continuar com LinkedIn" })).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Apoio" })).toHaveAttribute("title", "Apoio · 0");
+  expect(screen.getByRole("button", { name: "Amei" })).toHaveAttribute("title", "Amei · 0");
+  expect(screen.getByRole("button", { name: "Genial" })).toHaveAttribute("title", "Genial · 0");
+  expect(screen.getByRole("button", { name: "Divertido" })).toHaveAttribute("title", "Divertido · 0");
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 });

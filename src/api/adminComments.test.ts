@@ -49,7 +49,13 @@ it("lets only an admin approve or reject a comment", async () => {
   });
   const memberSession = { id: member.userId, role: member.role, name: member.name };
   const adminSession = { id: admin.userId, role: admin.role, name: admin.name };
-  const created = await postComment(db, "o-agente-secreto", memberSession, { body: "Olá", parentId: null });
+  const created = await postComment(db, "o-agente-secreto", {
+    body: "Olá",
+    parentId: null,
+    sessionId: "6f4b1c0a-6a4e-4b1d-8c3e-1a2b3c4d5e6f",
+    name: "Ada",
+    email: "ada@example.com",
+  });
   expect(created.status).toBe(201);
   if (created.status !== 201) throw new Error("expected 201");
 
