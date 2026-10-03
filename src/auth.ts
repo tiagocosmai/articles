@@ -1,6 +1,8 @@
+import { customFetch } from "@auth/core";
 import NextAuth from "next-auth";
 import GitHub from "next-auth/providers/github";
 import LinkedIn from "next-auth/providers/linkedin";
+import { linkedinTokenFetch } from "./auth/linkedinToken";
 import { authReturnUrl } from "./authReturn";
 import { getDb } from "./db/client";
 import { signInIdentity } from "./db/users";
@@ -23,12 +25,20 @@ function username(provider: string, profile: unknown): string | null {
   return typeof login === "string" ? login : null;
 }
 
+const sessionMaxAge = 60 * 24 * 60 * 60;
+
 export const { handlers, auth } = NextAuth({
   secret: process.env.AUTH_SECRET,
-  session: { strategy: "jwt" },
+  session: { strategy: "jwt", maxAge: sessionMaxAge },
   providers: [
     GitHub({ clientId: process.env.GITHUB_ID, clientSecret: process.env.GITHUB_SECRET }),
-    LinkedIn({ clientId: process.env.LINKEDIN_ID, clientSecret: process.env.LINKEDIN_SECRET }),
+    LinkedIn({
+      clientId: process.env.LINKEDIN_ID,
+      clientSecret: process.env.LINKEDIN_SECRET,
+      client: { token_endpoint_auth_method: "client_secret_post" },
+      checks: ["state"],
+      [customFetch]: linkedinTokenFetch,
+    }),
   ],
   callbacks: {
     async redirect({ url, baseUrl }) {

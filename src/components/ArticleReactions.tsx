@@ -74,9 +74,32 @@ export function ArticleReactions({
     window.location.href = path;
   }
 
+  async function refreshSignedIn() {
+    const storage = document as Document & {
+      hasStorageAccess?: () => Promise<boolean>;
+      requestStorageAccess?: () => Promise<void>;
+    };
+    if (window.top !== null && window.top !== window.self && storage.requestStorageAccess) {
+      try {
+        const allowed = storage.hasStorageAccess ? await storage.hasStorageAccess() : false;
+        if (!allowed) await storage.requestStorageAccess();
+      } catch {
+        /* The reader declined cookie access. */
+      }
+    }
+    try {
+      const session = (await (await fetch("/api/auth/session")).json()) as { userId?: string };
+      const next = Boolean(session.userId);
+      setSignedIn(next);
+      return next;
+    } catch {
+      return false;
+    }
+  }
+
   async function press(type: string, alreadyMine: boolean) {
     setOpen(false);
-    if (!signedIn) {
+    if (!signedIn && !(await refreshSignedIn())) {
       goToSignIn();
       return;
     }
