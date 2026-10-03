@@ -1,13 +1,13 @@
 import { getComments, postComment } from "../../../../../src/api/comments";
 import type { ReaderSession } from "../../../../../src/api/reactions";
-import { readSessionId } from "../../../../../src/auth/visitor";
+import { sessionIdFrom } from "../../../../../src/auth/visitor";
 import { getDb } from "../../../../../src/db/client";
 import { findVisitor } from "../../../../../src/db/users";
 
 export const runtime = "nodejs";
 
 async function reader(request: Request): Promise<ReaderSession> {
-  const sessionId = readSessionId(request.headers.get("cookie"));
+  const sessionId = sessionIdFrom(request);
   if (!sessionId) return null;
   const visitor = await findVisitor(getDb(), sessionId);
   if (!visitor) return null;
@@ -22,11 +22,11 @@ export async function GET(request: Request, context: { params: Promise<{ slug: s
 
 export async function POST(request: Request, context: { params: Promise<{ slug: string }> }) {
   const { slug } = await context.params;
-  const body = (await request.json()) as { body?: string; parentId?: string | null; name?: string; email?: string };
+  const body = (await request.json()) as { body?: string; parentId?: string | null; name?: string; email?: string; sessionId?: string };
   const result = await postComment(getDb(), slug, {
     body: body.body ?? "",
     parentId: body.parentId ?? null,
-    sessionId: readSessionId(request.headers.get("cookie")) ?? undefined,
+    sessionId: sessionIdFrom(request, body.sessionId) ?? undefined,
     name: body.name,
     email: body.email,
   });

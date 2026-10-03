@@ -17,6 +17,7 @@ const comment = {
 function clearCookies() {
   for (const name of ["articles-session", "articles-name", "articles-email"]) {
     document.cookie = `${name}=; Path=/; Max-Age=0`;
+    localStorage.removeItem(name);
   }
 }
 
@@ -65,6 +66,9 @@ it("shows the text as written and counts the characters still available", async 
   expect(await screen.findByText(comment.body)).toBeInTheDocument();
   expect(container.querySelector("img")).toBeNull();
   expect(screen.getByText("1000 restantes")).toBeInTheDocument();
+  expect(screen.getByRole("textbox", { name: "Nome" })).toHaveAttribute("placeholder", "Nome");
+  expect(screen.getByRole("textbox", { name: "E-mail" })).toHaveAttribute("placeholder", "E-mail");
+  expect(screen.getByRole("textbox", { name: "Escreva um comentário" })).toHaveAttribute("placeholder", "Escreva um comentário");
   await user.type(screen.getByRole("textbox", { name: "Escreva um comentário" }), "Oi");
   expect(screen.getByText("998 restantes")).toBeInTheDocument();
 });
@@ -80,15 +84,16 @@ it("asks for a name and email, stores them, and sends the comment to moderation"
   await user.click(screen.getByRole("button", { name: "Enviar para moderação" }));
   expect(await screen.findByText("Seu comentário ficará visível assim que a moderação for concluída.")).toBeInTheDocument();
   expect(screen.getByText("Olá")).toBeInTheDocument();
-  expect(document.cookie).toContain("articles-name=Ada");
-  expect(document.cookie).toContain("articles-email=ada%40example.com");
-  expect(document.cookie).toMatch(/articles-session=[0-9a-f-]{36}/i);
+  expect(localStorage.getItem("articles-name")).toBe("Ada");
+  expect(localStorage.getItem("articles-email")).toBe("ada@example.com");
+  expect(localStorage.getItem("articles-session")).toMatch(/^[0-9a-f-]{36}$/i);
 });
 
-it("refills the name and email from cookies", async () => {
+it("refills the name and email from storage", async () => {
   mockFetch();
-  document.cookie = "articles-name=Ada; Path=/";
-  document.cookie = "articles-email=ada%40example.com; Path=/";
+  clearCookies();
+  localStorage.setItem("articles-name", "Ada");
+  localStorage.setItem("articles-email", "ada@example.com");
   render(
     <ThemeProvider>
       <LocaleProvider>
