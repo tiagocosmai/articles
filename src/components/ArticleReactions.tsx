@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocale } from "../context/LocaleContext";
 import { useTheme } from "../context/ThemeContext";
 import { articleShareUrl, portfolioShareOrigin } from "../share/articleShareUrl";
@@ -34,6 +34,22 @@ export function ArticleReactions({
   const [summary, setSummary] = useState(providedSummary);
   const [signedIn, setSignedIn] = useState(providedSignedIn ?? false);
   const [open, setOpen] = useState(false);
+  const closeTimer = useRef<number | null>(null);
+
+  function showPicker() {
+    if (closeTimer.current !== null) window.clearTimeout(closeTimer.current);
+    setOpen(true);
+  }
+
+  function hidePicker() {
+    closeTimer.current = window.setTimeout(() => setOpen(false), 180);
+  }
+
+  useEffect(() => {
+    return () => {
+      if (closeTimer.current !== null) window.clearTimeout(closeTimer.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (providedSummary && providedSignedIn !== undefined) return;
@@ -115,34 +131,32 @@ export function ArticleReactions({
   }
 
   return (
-    <div
-      className="relative"
-      onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
-    >
+    <div className="relative" onMouseEnter={showPicker} onMouseLeave={hidePicker}>
       {open ? (
-        <div
-          role="group"
-          aria-label={t("reaction_like")}
-          className="absolute bottom-full left-1/2 z-20 mb-2 flex -translate-x-1/2 gap-1 rounded-full border border-white/10 bg-[#121816] px-2 py-1 shadow-lg"
-        >
-          {reactionTypes.map((type) => {
-            const reaction = summary.reactions.find((item) => item.type === type);
-            return (
-              <button
-                key={type}
-                type="button"
-                aria-label={t(`reaction_${type}`)}
-                aria-pressed={reaction?.mine ?? false}
-                title={t(`reaction_${type}`)}
-                onClick={() => void press(type, Boolean(reaction?.mine))}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-full text-white"
-                style={{ backgroundColor: reactionColor[type] }}
-              >
-                <ReactionIcon type={type} />
-              </button>
-            );
-          })}
+        <div className="absolute bottom-[calc(100%-4px)] left-1/2 z-20 -translate-x-1/2 px-3 pb-1">
+          <div
+            role="group"
+            aria-label={t("reaction_like")}
+            className="flex gap-1 rounded-full border border-white/10 bg-[#121816] px-1.5 py-1 shadow-lg"
+          >
+            {reactionTypes.map((type) => {
+              const reaction = summary.reactions.find((item) => item.type === type);
+              return (
+                <button
+                  key={type}
+                  type="button"
+                  aria-label={t(`reaction_${type}`)}
+                  aria-pressed={reaction?.mine ?? false}
+                  title={t(`reaction_${type}`)}
+                  onClick={() => void press(type, Boolean(reaction?.mine))}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full text-white"
+                  style={{ backgroundColor: reactionColor[type] }}
+                >
+                  <ReactionIcon type={type} />
+                </button>
+              );
+            })}
+          </div>
         </div>
       ) : null}
       <button
@@ -156,7 +170,7 @@ export function ArticleReactions({
             goToSignIn();
             return;
           }
-          setOpen(true);
+          showPicker();
         }}
         className={`inline-flex h-8 w-8 items-center justify-center rounded-md border ${buttonClass}`}
         style={mine ? { color: reactionColor[active] } : undefined}

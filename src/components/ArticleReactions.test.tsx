@@ -31,8 +31,9 @@ it("shows a pressed like icon and opens the reaction choices", async () => {
   const like = screen.getByRole("button", { name: "Gostei" });
   expect(like).toHaveAttribute("aria-pressed", "true");
   expect(screen.queryByRole("button", { name: "Parabéns" })).not.toBeInTheDocument();
-  await user.click(like);
+  await user.hover(like);
   expect(screen.getByRole("button", { name: "Parabéns" })).toBeInTheDocument();
+  await user.click(like);
   expect(screen.getByRole("button", { name: "Apoio" })).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Amei" })).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Genial" })).toBeInTheDocument();
