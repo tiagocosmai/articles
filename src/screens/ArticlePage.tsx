@@ -121,15 +121,17 @@ export function ArticlePage({ content }: { content: LoadedContent }) {
             <time dateTime={article.date} className="text-sm opacity-80">
               {formatArticleDate(article.date, locale)}
             </time>
-            <ArticleShare
-              slug={article.slug}
-              title={article.locales[locale].title}
-              description={article.locales[locale].description}
-              date={article.date}
-              markdown={typeof markdown === "string" ? markdown : ""}
-            />
+            <div className="flex items-center gap-2">
+              <ArticleReactions slug={article.slug} />
+              <ArticleShare
+                slug={article.slug}
+                title={article.locales[locale].title}
+                description={article.locales[locale].description}
+                date={article.date}
+                markdown={typeof markdown === "string" ? markdown : ""}
+              />
+            </div>
           </header>
-          <ArticleReactions slug={article.slug} />
           {typeof markdown === "string" ? (
             <MarkdownBody markdown={markdown} />
           ) : (
