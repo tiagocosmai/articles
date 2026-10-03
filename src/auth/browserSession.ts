@@ -1,0 +1,25 @@
+type StorageDocument = Document & {
+  hasStorageAccess?: () => Promise<boolean>;
+  requestStorageAccess?: () => Promise<void>;
+};
+
+export async function allowLoginCookie(): Promise<boolean> {
+  const storage = document as StorageDocument;
+  if (window.top === window.self || !storage.requestStorageAccess) return true;
+  try {
+    if (storage.hasStorageAccess && (await storage.hasStorageAccess())) return true;
+    await storage.requestStorageAccess();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function readSignedIn(): Promise<boolean> {
+  try {
+    const session = (await (await fetch("/api/auth/session")).json()) as { userId?: string };
+    return Boolean(session.userId);
+  } catch {
+    return false;
+  }
+}

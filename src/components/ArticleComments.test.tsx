@@ -100,22 +100,16 @@ it("offers one reply level under a comment", async () => {
   expect(screen.getByRole("textbox", { name: "Escreva uma resposta" })).toBeInTheDocument();
 });
 
-it("sends a signed-out reader to sign in", async () => {
+it("explains why a signed-out reader needs to sign in", async () => {
   mockFetch({ signedIn: false });
-  let href = "http://localhost/o-agente-secreto";
-  Object.defineProperty(window, "location", {
-    configurable: true,
-    value: {
-      get href() {
-        return href;
-      },
-      set href(value: string) {
-        href = value;
-      },
-    },
-  });
+  const open = vi.spyOn(window, "open").mockReturnValue({ closed: true } as Window);
   renderComments();
   const user = userEvent.setup();
   await user.click(await screen.findByRole("button", { name: "Entrar para comentar" }));
-  expect(window.location.href).toBe("/api/auth/signin?callbackUrl=%2Fo-agente-secreto");
+  expect(await screen.findByRole("dialog", { name: "Entre para participar" })).toHaveTextContent(
+    "Um cookie guarda só essa sessão.",
+  );
+  await user.click(screen.getByRole("button", { name: "Continuar com GitHub" }));
+  expect(String(open.mock.calls[0]?.[0])).toContain("/auth/start?provider=github&next=%2Fo-agente-secreto");
+  open.mockRestore();
 });

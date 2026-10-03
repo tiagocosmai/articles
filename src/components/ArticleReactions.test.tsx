@@ -40,38 +40,10 @@ it("shows a pressed like icon and opens the reaction choices", async () => {
   expect(screen.getByRole("button", { name: "Divertido" })).toBeInTheDocument();
 });
 
-it("asks a signed-out reader to sign in", async () => {
-  let href = "http://localhost/o-agente-secreto";
-  Object.defineProperty(window, "location", {
-    configurable: true,
-    value: {
-      get href() {
-        return href;
-      },
-      set href(value: string) {
-        href = value;
-      },
-    },
-  });
+it("explains why a signed-out reader needs to sign in", async () => {
   const user = userEvent.setup();
   renderReactions(false);
   await user.click(screen.getByRole("button", { name: "Gostei" }));
-  expect(window.location.href).toBe("/api/auth/signin?callbackUrl=%2Fo-agente-secreto");
-});
-
-it("opens sign-in in the top window when the blog is embedded", async () => {
-  const top = { location: { href: "https://tiagocosmai.github.io/pt/blog" } };
-  const originalTop = window.top;
-  Object.defineProperty(window, "top", { configurable: true, value: top });
-  Object.defineProperty(window, "location", {
-    configurable: true,
-    value: { href: "https://tiagocosmai-articles.vercel.app/o-agente-secreto", origin: "https://tiagocosmai-articles.vercel.app" },
-  });
-  const user = userEvent.setup();
-  renderReactions(false);
-  await user.click(screen.getByRole("button", { name: "Gostei" }));
-  expect(top.location.href).toBe(
-    "https://tiagocosmai-articles.vercel.app/api/auth/signin?callbackUrl=https%3A%2F%2Ftiagocosmai.github.io%2Fpt%2Fblog%2Fo-agente-secreto",
-  );
-  Object.defineProperty(window, "top", { configurable: true, value: originalTop });
+  expect(await screen.findByRole("dialog", { name: "Entre para participar" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Continuar com LinkedIn" })).toBeInTheDocument();
 });

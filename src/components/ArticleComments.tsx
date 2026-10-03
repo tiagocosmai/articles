@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useLocale } from "../context/LocaleContext";
 import { useTheme } from "../context/ThemeContext";
-import { articleShareUrl, portfolioShareOrigin } from "../share/articleShareUrl";
+import { allowLoginCookie, readSignedIn } from "../auth/browserSession";
+import { LoginPrompt } from "./LoginPrompt";
 
 const maxBodyLength = 1000;
 
@@ -28,31 +29,25 @@ export function ArticleComments({ slug }: { slug: string }) {
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [replyDraft, setReplyDraft] = useState("");
   const [pendingNotice, setPendingNotice] = useState(false);
+  const [loginOpen, setLoginOpen] = useState(false);
 
   async function load() {
-    const [commentsResponse, sessionResponse] = await Promise.all([
-      fetch(`/api/articles/${slug}/comments`),
-      fetch("/api/auth/session"),
-    ]);
+    const commentsResponse = await fetch(`/api/articles/${slug}/comments`);
     const payload = (await commentsResponse.json()) as { comments?: CommentItem[] };
-    const session = (await sessionResponse.json()) as { userId?: string };
     setComments(Array.isArray(payload.comments) ? payload.comments : []);
-    setSignedIn(Boolean(session.userId));
+    setSignedIn(await readSignedIn());
   }
 
   useEffect(() => {
     let cancelled = false;
     void (async () => {
       try {
-        const [commentsResponse, sessionResponse] = await Promise.all([
-          fetch(`/api/articles/${slug}/comments`),
-          fetch("/api/auth/session"),
-        ]);
+        const commentsResponse = await fetch(`/api/articles/${slug}/comments`);
         const payload = (await commentsResponse.json()) as { comments?: CommentItem[] };
-        const session = (await sessionResponse.json()) as { userId?: string };
         if (cancelled) return;
+        await allowLoginCookie();
         setComments(Array.isArray(payload.comments) ? payload.comments : []);
-        setSignedIn(Boolean(session.userId));
+        setSignedIn(await readSignedIn());
       } catch {
         if (!cancelled) setComments([]);
       }
@@ -62,21 +57,15 @@ export function ArticleComments({ slug }: { slug: string }) {
     };
   }, [slug]);
 
-  function goToSignIn() {
-    const embedded = window.top !== null && window.top !== window.self;
-    const callbackUrl = embedded ? articleShareUrl(slug, portfolioShareOrigin(), locale) : `/${slug}`;
-    const path = `/api/auth/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`;
-    if (embedded && window.top) {
-      window.top.location.href = new URL(path, window.location.origin).href;
-      return;
-    }
-    window.location.href = path;
-  }
-
   async function send(body: string, parentId: string | null) {
     if (!signedIn) {
-      goToSignIn();
-      return;
+      const allowed = await allowLoginCookie();
+      if (allowed && (await readSignedIn())) {
+        setSignedIn(true);
+      } else {
+        setLoginOpen(true);
+        return;
+      }
     }
     const text = body.trim();
     if (!text || text.length > maxBodyLength) return;
@@ -149,6 +138,12 @@ export function ArticleComments({ slug }: { slug: string }) {
           </li>
         ))}
       </ul>
+      <LoginPrompt
+        open={loginOpen}
+        slug={slug}
+        onClose={() => setLoginOpen(false)}
+        onSignedIn={() => setSignedIn(true)}
+      />
       {pendingNotice ? (
         <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/60 px-4">
           <div
