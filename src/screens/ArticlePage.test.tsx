@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { AppRoutes } from "../App";
@@ -12,8 +12,8 @@ const PT_TITLE =
 const FRONT = "Qual é a diferença entre um assistente e um agente?";
 const BACK_START = "Um assistente devolve uma resposta a um pedido.";
 
-function renderAt(path: string, content: LoadedContent = loadCatalog()) {
-  return render(
+async function renderAt(path: string, content: LoadedContent = loadCatalog()) {
+  const view = render(
     <MemoryRouter initialEntries={[path]}>
       <LocaleProvider>
         <ThemeProvider>
@@ -22,27 +22,45 @@ function renderAt(path: string, content: LoadedContent = loadCatalog()) {
       </LocaleProvider>
     </MemoryRouter>,
   );
+  await act(async () => {
+    await Promise.resolve();
+  });
+  return view;
 }
 
 describe("Article", () => {
   beforeEach(() => {
     localStorage.clear();
     localStorage.setItem("articles-locale", "pt");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          reactions: ["like", "celebrate", "support", "love", "insightful", "funny"].map((type) => ({
+            type,
+            count: 0,
+            mine: false,
+          })),
+        }),
+      }),
+    );
   });
 
   afterEach(() => {
+    vi.unstubAllGlobals();
     localStorage.clear();
   });
 
-  it("does not show the list count or sort controls", () => {
-    renderAt("/o-agente-secreto");
+  it("does not show the list count or sort controls", async () => {
+    await renderAt("/o-agente-secreto");
     expect(screen.queryByText("2 de 2 artigos")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Ordenar por")).not.toBeInTheDocument();
   });
 
   it("shows the markdown, flips a card, and opens the home tag filter", async () => {
     const user = userEvent.setup();
-    renderAt("/o-agente-secreto");
+    await renderAt("/o-agente-secreto");
 
     expect(
       screen.getByText("Autonomia pode ser delegada. Accountability não."),
@@ -165,9 +183,9 @@ describe("Article", () => {
     ],
   ] as const)(
     "labels the share actions in %s",
-    (locale, linkedIn, whatsApp, copyText, copyUrl, printArticle, downloadPdf, intro, title) => {
+    async (locale, linkedIn, whatsApp, copyText, copyUrl, printArticle, downloadPdf, intro, title) => {
       localStorage.setItem("articles-locale", locale);
-      renderAt("/o-agente-secreto");
+      await renderAt("/o-agente-secreto");
       expect(screen.getByRole("link", { name: linkedIn })).toHaveAttribute("title", linkedIn);
       expect(screen.getByRole("link", { name: whatsApp })).toHaveAttribute("title", whatsApp);
       expect(screen.getByRole("button", { name: copyText })).toHaveAttribute("title", copyText);
@@ -184,8 +202,8 @@ describe("Article", () => {
     },
   );
 
-  it("shows not found for an unknown slug, with a link home", () => {
-    renderAt("/missing");
+  it("shows not found for an unknown slug, with a link home", async () => {
+    await renderAt("/missing");
 
     expect(
       screen.getByRole("heading", { name: "Artigo não encontrado" }),
@@ -195,8 +213,8 @@ describe("Article", () => {
     ).toHaveAttribute("href", "/");
   });
 
-  it("shows not found for an unknown path", () => {
-    renderAt("/no-such-page");
+  it("shows not found for an unknown path", async () => {
+    await renderAt("/no-such-page");
 
     expect(
       screen.getByRole("heading", { name: "Artigo não encontrado" }),
@@ -206,12 +224,12 @@ describe("Article", () => {
     ).toHaveAttribute("href", "/");
   });
 
-  it("shows the missing-file warning and does not use another language", () => {
+  it("shows the missing-file warning and does not use another language", async () => {
     const content = loadCatalog();
     const markdown = { ...content.markdown };
     delete markdown["o-agente-secreto.pt.md"];
 
-    renderAt("/o-agente-secreto", { ...content, markdown });
+    await renderAt("/o-agente-secreto", { ...content, markdown });
 
     expect(
       screen.getByText("Este arquivo de idioma não está disponível."),
@@ -227,12 +245,12 @@ describe("Article", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("shows the missing-file warning when flashcards are absent", () => {
+  it("shows the missing-file warning when flashcards are absent", async () => {
     const content = loadCatalog();
     const flashcards = { ...content.flashcards };
     delete flashcards["o-agente-secreto.pt.json"];
 
-    renderAt("/o-agente-secreto", { ...content, flashcards });
+    await renderAt("/o-agente-secreto", { ...content, flashcards });
 
     expect(
       screen.getByText("Este arquivo de idioma não está disponível."),
