@@ -143,7 +143,7 @@ export const comments = pgTable(
     ...timestamps,
   },
   (table) => [
-    check("comments_body_length", sql`char_length(${table.body}) between 1 and 4000`),
+    check("comments_body_length", sql`char_length(${table.body}) between 1 and 1000`),
   ],
 );
 

@@ -4,7 +4,11 @@ import { comments, users } from "../db/schema";
 import type { TestDatabase } from "../db/testDb";
 import type { ReaderSession } from "./reactions";
 
-const maxBodyLength = 4000;
+const maxBodyLength = 1000;
+
+export function commentsAutoApprove(): boolean {
+  return process.env.COMMENTS_AUTO_APPROVE !== "false";
+}
 
 function present(
   row: {
@@ -47,7 +51,7 @@ export async function postComment(
       .select()
       .from(comments)
       .where(and(eq(comments.id, input.parentId), eq(comments.articleId, article.id), isNull(comments.deletedAt)));
-    if (!parent) return { status: 400 as const, body: { message: "invalid parent" } };
+    if (!parent || parent.parentId) return { status: 400 as const, body: { message: "invalid parent" } };
   }
   const [created] = await db
     .insert(comments)
@@ -56,7 +60,7 @@ export async function postComment(
       userId: session.id,
       parentId: input.parentId,
       body,
-      status: "pending",
+      status: commentsAutoApprove() ? "approved" : "pending",
     })
     .returning();
   return {

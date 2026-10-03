@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { BlogLink } from "../components/BlogLink";
+import { ArticleComments } from "../components/ArticleComments";
 import { ArticleFilters } from "../components/ArticleFilters";
 import { ArticleReactions } from "../components/ArticleReactions";
 import { ArticleShare } from "../components/ArticleShare";
@@ -152,6 +153,7 @@ export function ArticlePage({ content }: { content: LoadedContent }) {
               </li>
             ))}
           </ul>
+          <ArticleComments slug={article.slug} />
         </article>
       }
     />
