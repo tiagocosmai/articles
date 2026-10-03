@@ -33,7 +33,7 @@ function renderComments() {
   );
 }
 
-function mockFetch(comments: unknown[] = []) {
+function mockFetch(comments: unknown[] = [], autoApprove = true) {
   const stored = [...comments];
   vi.stubGlobal(
     "fetch",
@@ -44,7 +44,7 @@ function mockFetch(comments: unknown[] = []) {
         const created = {
           id: "new",
           body: payload.body,
-          status: "pending" as const,
+          status: autoApprove ? "approved" as const : "pending" as const,
           parentId: payload.parentId,
           userName: "Ada",
           createdAt: "2026-10-03T15:04:00.000Z",
@@ -53,7 +53,7 @@ function mockFetch(comments: unknown[] = []) {
         stored.push(created);
         return { ok: true, json: async () => created };
       }
-      if (url.includes("/comments")) return { ok: true, json: async () => ({ comments: stored }) };
+      if (url.includes("/comments")) return { ok: true, json: async () => ({ comments: stored, autoApprove }) };
       return { ok: true, json: async () => ({}) };
     }),
   );
@@ -73,20 +73,30 @@ it("shows the text as written and counts the characters still available", async 
   expect(screen.getByText("998 restantes")).toBeInTheDocument();
 });
 
-it("asks for a name and email, stores them, and sends the comment to moderation", async () => {
+it("asks for a name and email and publishes when approval is automatic", async () => {
   mockFetch();
   renderComments();
   const user = userEvent.setup();
-  expect(screen.queryByRole("dialog", { name: "Entre para participar" })).not.toBeInTheDocument();
   await user.type(await screen.findByRole("textbox", { name: "Nome" }), "Ada");
   await user.type(screen.getByRole("textbox", { name: "E-mail" }), "ada@example.com");
   await user.type(screen.getByRole("textbox", { name: "Escreva um comentário" }), "Olá");
-  await user.click(screen.getByRole("button", { name: "Enviar para moderação" }));
-  expect(await screen.findByText("Seu comentário ficará visível assim que a moderação for concluída.")).toBeInTheDocument();
-  expect(screen.getByText("Olá")).toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "Publicar" }));
+  expect(await screen.findByText("Olá")).toBeInTheDocument();
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   expect(localStorage.getItem("articles-name")).toBe("Ada");
   expect(localStorage.getItem("articles-email")).toBe("ada@example.com");
   expect(localStorage.getItem("articles-session")).toMatch(/^[0-9a-f-]{36}$/i);
+});
+
+it("shows the moderation notice when automatic approval is off", async () => {
+  mockFetch([], false);
+  renderComments();
+  const user = userEvent.setup();
+  await user.type(await screen.findByRole("textbox", { name: "Nome" }), "Ada");
+  await user.type(screen.getByRole("textbox", { name: "E-mail" }), "ada@example.com");
+  await user.type(screen.getByRole("textbox", { name: "Escreva um comentário" }), "Olá");
+  await user.click(await screen.findByRole("button", { name: "Enviar para moderação" }));
+  expect(await screen.findByText("Seu comentário ficará visível assim que a moderação for concluída.")).toBeInTheDocument();
 });
 
 it("refills the name and email from storage", async () => {
