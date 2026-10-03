@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useLocale } from "../context/LocaleContext";
 import { useTheme } from "../context/ThemeContext";
 import { allowLoginCookie, readSignedIn } from "../auth/browserSession";
+import { readGuestContact, writeGuestContact, type GuestContact } from "../auth/guest";
 import { LoginPrompt } from "./LoginPrompt";
 
 type ReactionSummary = {
@@ -36,7 +37,9 @@ export function ArticleReactions({
   const [signedIn, setSignedIn] = useState(providedSignedIn ?? false);
   const [open, setOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
+  const [guest, setGuest] = useState<GuestContact | null>(null);
   const closeTimer = useRef<number | null>(null);
+  const pendingType = useRef<string | null>(null);
 
   function showPicker() {
     if (closeTimer.current !== null) window.clearTimeout(closeTimer.current);
@@ -46,6 +49,10 @@ export function ArticleReactions({
   function hidePicker() {
     closeTimer.current = window.setTimeout(() => setOpen(false), 180);
   }
+
+  useEffect(() => {
+    setGuest(readGuestContact());
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -76,6 +83,23 @@ export function ArticleReactions({
   const buttonClass =
     mode === "dark" ? "border-brand/40 text-brand" : "border-brand-light/40 text-brand-light";
 
+  function acceptGuest(contact: GuestContact) {
+    writeGuestContact(contact);
+    setGuest(contact);
+    setLoginOpen(false);
+    const type = pendingType.current;
+    pendingType.current = null;
+    if (type) void press(type, false, contact, false);
+  }
+
+  function acceptSignIn() {
+    setSignedIn(true);
+    setLoginOpen(false);
+    const type = pendingType.current;
+    pendingType.current = null;
+    if (type) void press(type, false, null, true);
+  }
+
   async function refreshSignedIn() {
     await allowLoginCookie();
     const next = await readSignedIn();
@@ -84,15 +108,26 @@ export function ArticleReactions({
     return next;
   }
 
-  async function press(type: string, alreadyMine: boolean) {
+  async function press(type: string, alreadyMine: boolean, asGuest = guest, asSignedIn = signedIn) {
     setOpen(false);
-    if (!signedIn && !(await refreshSignedIn())) return;
+    if (!asSignedIn && !asGuest) {
+      if (await refreshSignedIn()) {
+        asSignedIn = true;
+      } else {
+        pendingType.current = type;
+        return;
+      }
+    }
     const response = alreadyMine
       ? await fetch(`/api/articles/${slug}/reactions/${type}`, { method: "DELETE" })
       : await fetch(`/api/articles/${slug}/reactions`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ type }),
+          body: JSON.stringify({
+            type,
+            name: asSignedIn ? undefined : asGuest?.name,
+            email: asSignedIn ? undefined : asGuest?.email,
+          }),
         });
     if (!response.ok) return;
     setSummary((await (await fetch(`/api/articles/${slug}/reactions`)).json()) as ReactionSummary);
@@ -135,7 +170,8 @@ export function ArticleReactions({
         aria-expanded={open}
         title={t(`reaction_${mine?.type ?? "like"}`)}
         onClick={() => {
-          if (!signedIn) {
+          if (!signedIn && !guest) {
+            pendingType.current = active;
             void refreshSignedIn();
             return;
           }
@@ -151,7 +187,8 @@ export function ArticleReactions({
       open={loginOpen}
       slug={slug}
       onClose={() => setLoginOpen(false)}
-      onSignedIn={() => setSignedIn(true)}
+      onSignedIn={acceptSignIn}
+      onGuest={acceptGuest}
     />
     </>
   );

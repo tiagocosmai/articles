@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocale } from "../context/LocaleContext";
 import { useTheme } from "../context/ThemeContext";
 import { allowLoginCookie, readSignedIn } from "../auth/browserSession";
+import { readGuestContact, writeGuestContact, type GuestContact } from "../auth/guest";
 import { LoginPrompt } from "./LoginPrompt";
 
 const maxBodyLength = 1000;
@@ -30,6 +31,8 @@ export function ArticleComments({ slug }: { slug: string }) {
   const [replyDraft, setReplyDraft] = useState("");
   const [pendingNotice, setPendingNotice] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
+  const [guest, setGuest] = useState<GuestContact | null>(null);
+  const pendingSend = useRef<{ body: string; parentId: string | null } | null>(null);
 
   async function load() {
     const commentsResponse = await fetch(`/api/articles/${slug}/comments`);
@@ -37,6 +40,10 @@ export function ArticleComments({ slug }: { slug: string }) {
     setComments(Array.isArray(payload.comments) ? payload.comments : []);
     setSignedIn(await readSignedIn());
   }
+
+  useEffect(() => {
+    setGuest(readGuestContact());
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -57,12 +64,14 @@ export function ArticleComments({ slug }: { slug: string }) {
     };
   }, [slug]);
 
-  async function send(body: string, parentId: string | null) {
-    if (!signedIn) {
+  async function send(body: string, parentId: string | null, asGuest = guest, asSignedIn = signedIn) {
+    if (!asSignedIn && !asGuest) {
       const allowed = await allowLoginCookie();
       if (allowed && (await readSignedIn())) {
         setSignedIn(true);
+        asSignedIn = true;
       } else {
+        pendingSend.current = { body, parentId };
         setLoginOpen(true);
         return;
       }
@@ -72,11 +81,15 @@ export function ArticleComments({ slug }: { slug: string }) {
     const response = await fetch(`/api/articles/${slug}/comments`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ body: text, parentId }),
+      body: JSON.stringify({
+        body: text,
+        parentId,
+        name: asSignedIn ? undefined : asGuest?.name,
+        email: asSignedIn ? undefined : asGuest?.email,
+      }),
     });
     if (!response.ok) return;
     const created = (await response.json()) as CommentItem;
-    if (created.status === "pending") setPendingNotice(true);
     if (parentId) {
       setReplyDraft("");
       setReplyTo(null);
@@ -84,6 +97,27 @@ export function ArticleComments({ slug }: { slug: string }) {
       setDraft("");
     }
     await load();
+    if (created.status === "pending") {
+      setPendingNotice(true);
+      setComments((current) => (current.some((item) => item.id === created.id) ? current : [...current, created]));
+    }
+  }
+
+  function acceptGuest(contact: GuestContact) {
+    writeGuestContact(contact);
+    setGuest(contact);
+    setLoginOpen(false);
+    const pending = pendingSend.current;
+    pendingSend.current = null;
+    if (pending) void send(pending.body, pending.parentId, contact, false);
+  }
+
+  function acceptSignIn() {
+    setSignedIn(true);
+    setLoginOpen(false);
+    const pending = pendingSend.current;
+    pendingSend.current = null;
+    if (pending) void send(pending.body, pending.parentId, null, true);
   }
 
   const border = mode === "dark" ? "border-brand/40" : "border-brand-light/40";
@@ -101,7 +135,7 @@ export function ArticleComments({ slug }: { slug: string }) {
         value={draft}
         onChange={setDraft}
         onSubmit={() => void send(draft, null)}
-        submitLabel={signedIn ? t("comments_submit") : t("comments_sign_in")}
+        submitLabel={signedIn ? t("comments_submit") : guest ? t("login_guest_submit") : t("comments_sign_in")}
         remainingLabel={t("comments_remaining")}
         border={border}
       />
@@ -125,7 +159,7 @@ export function ArticleComments({ slug }: { slug: string }) {
                 value={replyDraft}
                 onChange={setReplyDraft}
                 onSubmit={() => void send(replyDraft, comment.id)}
-                submitLabel={signedIn ? t("comments_reply") : t("comments_sign_in")}
+                submitLabel={signedIn ? t("comments_reply") : guest ? t("login_guest_submit") : t("comments_sign_in")}
                 remainingLabel={t("comments_remaining")}
                 border={border}
               />
@@ -142,7 +176,8 @@ export function ArticleComments({ slug }: { slug: string }) {
         open={loginOpen}
         slug={slug}
         onClose={() => setLoginOpen(false)}
-        onSignedIn={() => setSignedIn(true)}
+        onSignedIn={acceptSignIn}
+        onGuest={acceptGuest}
       />
       {pendingNotice ? (
         <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/60 px-4">

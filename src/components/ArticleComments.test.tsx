@@ -15,6 +15,7 @@ const comment = {
 };
 
 function renderComments() {
+  sessionStorage.clear();
   localStorage.setItem("articles-locale", "pt");
   return render(
     <ThemeProvider>
@@ -36,11 +37,11 @@ function mockFetch(options: {
     vi.fn(async (input: RequestInfo, init?: RequestInit) => {
       const url = String(input);
       if (init?.method === "POST") {
-        const payload = JSON.parse(String(init.body)) as { body: string; parentId: string | null };
+        const payload = JSON.parse(String(init.body)) as { body: string; parentId: string | null; email?: string };
         const created = {
           id: "new",
           body: payload.body,
-          status: options.createdStatus ?? "approved",
+          status: options.createdStatus ?? (payload.email ? "pending" : "approved"),
           parentId: payload.parentId,
           userName: "Ada",
           createdAt: "2026-10-03T15:04:00.000Z",
@@ -50,6 +51,9 @@ function mockFetch(options: {
         return { ok: true, json: async () => created };
       }
       if (url.includes("/comments")) return { ok: true, json: async () => ({ comments }) };
+      if (url.includes("/methods")) {
+        return { ok: true, json: async () => ({ methods: [{ id: "github" }, { id: "gmail" }, { id: "magiclink" }] }) };
+      }
       return { ok: true, json: async () => (options.signedIn ? { userId: "user-1" } : {}) };
     }),
   );
@@ -107,9 +111,46 @@ it("explains why a signed-out reader needs to sign in", async () => {
   const user = userEvent.setup();
   await user.click(await screen.findByRole("button", { name: "Entrar para comentar" }));
   expect(await screen.findByRole("dialog", { name: "Entre para participar" })).toHaveTextContent(
-    "Um cookie guarda só essa sessão.",
+    "Um cookie guarda a sessão",
   );
   await user.click(screen.getByRole("button", { name: "Continuar com GitHub" }));
   expect(String(open.mock.calls[0]?.[0])).toContain("/auth/start?provider=github&next=%2Fo-agente-secreto");
+  expect(screen.queryByRole("button", { name: "Continuar com LinkedIn" })).not.toBeInTheDocument();
   open.mockRestore();
+});
+
+it("sends a name and email to moderation when the reader does not sign in", async () => {
+  mockFetch({ signedIn: false });
+  renderComments();
+  const user = userEvent.setup();
+  await user.type(await screen.findByRole("textbox", { name: "Escreva um comentário" }), "Olá");
+  await user.click(screen.getByRole("button", { name: "Entrar para comentar" }));
+  await user.click(await screen.findByRole("button", { name: "Continuar sem entrar" }));
+  await user.type(screen.getByRole("textbox", { name: "Nome" }), "Ada");
+  await user.type(screen.getByRole("textbox", { name: "E-mail" }), "ada@example.com");
+  await user.click(screen.getByRole("button", { name: "Enviar para moderação" }));
+  expect(await screen.findByText("Seu comentário ficará visível assim que a moderação for concluída.")).toBeInTheDocument();
+  expect(screen.getByText("Olá")).toBeInTheDocument();
+});
+
+it("closes the login dialog when the browser session is signed in", async () => {
+  let signed = false;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: RequestInfo) => {
+      const url = String(input);
+      if (url.includes("/comments")) return { ok: true, json: async () => ({ comments: [] }) };
+      if (url.includes("/methods")) return { ok: true, json: async () => ({ methods: [{ id: "github" }] }) };
+      if (signed) return { ok: true, json: async () => ({ userId: "user-1" }) };
+      return { ok: true, json: async () => ({}) };
+    }),
+  );
+  renderComments();
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Entrar para comentar" }));
+  expect(await screen.findByRole("dialog", { name: "Entre para participar" })).toBeInTheDocument();
+  signed = true;
+  window.dispatchEvent(new StorageEvent("storage", { key: "tiagocosmai-auth", newValue: "1" }));
+  expect(await screen.findByRole("button", { name: "Publicar" })).toBeInTheDocument();
+  expect(screen.queryByRole("dialog", { name: "Entre para participar" })).not.toBeInTheDocument();
 });

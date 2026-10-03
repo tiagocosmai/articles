@@ -1,5 +1,7 @@
+import { guestContact } from "../auth/guest";
 import { activateReaction, clearReaction, isReactionType, reactionSummary, visibleArticle } from "../db/reactions";
 import type { TestDatabase } from "../db/testDb";
+import { signInGuest } from "../db/users";
 
 export type ReaderSession = { id: string; role: "member" | "admin"; name: string } | null;
 
@@ -12,12 +14,33 @@ export async function getReactions(db: TestDatabase, slug: string, session: Read
   };
 }
 
-export async function postReaction(db: TestDatabase, slug: string, session: ReaderSession, type: string) {
+async function readerOrGuest(
+  db: TestDatabase,
+  session: ReaderSession,
+  name?: string,
+  email?: string,
+) {
+  if (session) return { status: 200 as const, reader: session };
+  const contact = guestContact(name, email);
+  if ((name || email) && !contact) return { status: 400 as const, reader: null };
+  if (!contact) return { status: 401 as const, reader: null };
+  const guest = await signInGuest(db, contact);
+  return { status: 200 as const, reader: { id: guest.userId, role: guest.role, name: guest.name } };
+}
+
+export async function postReaction(
+  db: TestDatabase,
+  slug: string,
+  session: ReaderSession,
+  type: string,
+  contact?: { name?: string; email?: string },
+) {
   if (!isReactionType(type)) return { status: 400 as const, body: { message: "invalid type" } };
-  if (!session) return { status: 401 as const, body: { message: "unauthorized" } };
+  const author = await readerOrGuest(db, session, contact?.name, contact?.email);
+  if (!author.reader) return { status: author.status, body: { message: author.status === 400 ? "invalid contact" : "unauthorized" } };
   const article = await visibleArticle(db, slug);
   if (!article) return { status: 404 as const, body: { message: "not found" } };
-  const row = await activateReaction(db, article.id, session.id, type);
+  const row = await activateReaction(db, article.id, author.reader.id, type);
   return { status: 200 as const, body: row };
 }
 

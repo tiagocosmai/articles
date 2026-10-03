@@ -45,5 +45,6 @@ it("explains why a signed-out reader needs to sign in", async () => {
   renderReactions(false);
   await user.click(screen.getByRole("button", { name: "Gostei" }));
   expect(await screen.findByRole("dialog", { name: "Entre para participar" })).toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "Continuar com LinkedIn" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Continuar com GitHub" })).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Continuar com LinkedIn" })).not.toBeInTheDocument();
 });

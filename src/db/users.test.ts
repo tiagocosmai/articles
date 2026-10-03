@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { signInIdentity } from "./users";
+import { signInGuest, signInIdentity } from "./users";
 import { createTestDb } from "./testDb";
 
 const github = {
@@ -51,4 +51,19 @@ it("keeps a LinkedIn member when a later GitHub login is linked", async () => {
   const admin = await signInIdentity(db, { ...github, providerAccountId: "2" });
   expect(admin.role).toBe("admin");
   expect(admin.userId).not.toBe(member.userId);
+});
+
+it("keeps a guest separate from a GitHub user who uses the same email", async () => {
+  const db = await createTestDb();
+  const account = await signInIdentity(db, {
+    ...github,
+    providerAccountId: "9",
+    providerUsername: "ada",
+    email: "ada@example.com",
+  });
+  const guest = await signInGuest(db, { name: "Ada Lovelace", email: "Ada@Example.com" });
+  expect(guest.role).toBe("member");
+  expect(guest.userId).not.toBe(account.userId);
+  const again = await signInGuest(db, { name: "Ada L.", email: "ada@example.com" });
+  expect(again).toMatchObject({ userId: guest.userId, name: "Ada L.", role: "member" });
 });
