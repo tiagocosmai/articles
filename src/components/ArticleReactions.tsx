@@ -42,12 +42,16 @@ export function ArticleReactions({ slug, summary: providedSummary }: { slug: str
     };
   }, []);
 
+  function reactionsUrl() {
+    const sessionId = ensureSessionId();
+    return `/api/articles/${slug}/reactions?sessionId=${encodeURIComponent(sessionId)}`;
+  }
+
   useEffect(() => {
     if (providedSummary) return;
     let cancelled = false;
     void (async () => {
-      ensureSessionId();
-      const reactionsResponse = await fetch(`/api/articles/${slug}/reactions`);
+      const reactionsResponse = await fetch(reactionsUrl());
       const next = (await reactionsResponse.json()) as ReactionSummary;
       if (!cancelled) setSummary(next);
     })();
@@ -66,16 +70,16 @@ export function ArticleReactions({ slug, summary: providedSummary }: { slug: str
 
   async function press(type: string, alreadyMine: boolean) {
     setOpen(false);
-    ensureSessionId();
+    const sessionId = ensureSessionId();
     const response = alreadyMine
-      ? await fetch(`/api/articles/${slug}/reactions/${type}`, { method: "DELETE" })
+      ? await fetch(`/api/articles/${slug}/reactions/${type}?sessionId=${encodeURIComponent(sessionId)}`, { method: "DELETE" })
       : await fetch(`/api/articles/${slug}/reactions`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ type }),
+          body: JSON.stringify({ type, sessionId }),
         });
     if (!response.ok) return;
-    setSummary((await (await fetch(`/api/articles/${slug}/reactions`)).json()) as ReactionSummary);
+    setSummary((await (await fetch(reactionsUrl())).json()) as ReactionSummary);
   }
 
   return (

@@ -1,6 +1,9 @@
-const sessionCookie = "articles-session";
-const nameCookie = "articles-name";
-const emailCookie = "articles-email";
+const sessionKey = "articles-session";
+const nameKey = "articles-name";
+const emailKey = "articles-email";
+const sessionCookie = sessionKey;
+const nameCookie = nameKey;
+const emailCookie = emailKey;
 const cookieLifetime = 60 * 60 * 24 * 400;
 
 export function isSessionId(value: string): boolean {
@@ -27,19 +30,42 @@ export function readSessionId(header: string | null): string | null {
   return value && isSessionId(value) ? value : null;
 }
 
+export function sessionIdFrom(request: Request, explicit?: string | null): string | null {
+  if (explicit && isSessionId(explicit)) return explicit;
+  const fromQuery = new URL(request.url).searchParams.get("sessionId");
+  if (fromQuery && isSessionId(fromQuery)) return fromQuery;
+  return readSessionId(request.headers.get("cookie"));
+}
+
 function writeCookie(name: string, value: string) {
   document.cookie = `${name}=${encodeURIComponent(value)}; Path=/; Max-Age=${cookieLifetime}; SameSite=Lax`;
 }
 
 export function ensureSessionId(): string {
-  const current = readSessionId(document.cookie);
-  if (current) return current;
-  const created = crypto.randomUUID();
-  writeCookie(sessionCookie, created);
+  try {
+    const stored = localStorage.getItem(sessionKey);
+    if (stored && isSessionId(stored)) return stored;
+  } catch {
+    // Private mode can block localStorage. The cookie below still identifies the reader.
+  }
+  const fromCookie = readSessionId(document.cookie);
+  const created = fromCookie ?? crypto.randomUUID();
+  try {
+    localStorage.setItem(sessionKey, created);
+  } catch {
+    writeCookie(sessionCookie, created);
+  }
   return created;
 }
 
 export function readVisitorContact(): { name: string; email: string } {
+  try {
+    const name = localStorage.getItem(nameKey);
+    const email = localStorage.getItem(emailKey);
+    if (name || email) return { name: name ?? "", email: email ?? "" };
+  } catch {
+    // Fall through to the cookie copy.
+  }
   return {
     name: readCookie(document.cookie, nameCookie) ?? "",
     email: readCookie(document.cookie, emailCookie) ?? "",
@@ -47,6 +73,12 @@ export function readVisitorContact(): { name: string; email: string } {
 }
 
 export function writeVisitorContact(name: string, email: string) {
+  try {
+    localStorage.setItem(nameKey, name);
+    localStorage.setItem(emailKey, email);
+  } catch {
+    // The cookie still keeps the contact when storage is blocked.
+  }
   writeCookie(nameCookie, name);
   writeCookie(emailCookie, email);
 }

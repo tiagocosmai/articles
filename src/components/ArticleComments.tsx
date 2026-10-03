@@ -32,8 +32,13 @@ export function ArticleComments({ slug }: { slug: string }) {
   const [email, setEmail] = useState("");
   const [invalid, setInvalid] = useState(false);
 
+  function commentsUrl() {
+    const sessionId = ensureSessionId();
+    return `/api/articles/${slug}/comments?sessionId=${encodeURIComponent(sessionId)}`;
+  }
+
   async function load() {
-    const commentsResponse = await fetch(`/api/articles/${slug}/comments`);
+    const commentsResponse = await fetch(commentsUrl());
     const payload = (await commentsResponse.json()) as { comments?: CommentItem[] };
     setComments(Array.isArray(payload.comments) ? payload.comments : []);
   }
@@ -49,8 +54,7 @@ export function ArticleComments({ slug }: { slug: string }) {
     let cancelled = false;
     void (async () => {
       try {
-        ensureSessionId();
-        const commentsResponse = await fetch(`/api/articles/${slug}/comments`);
+        const commentsResponse = await fetch(commentsUrl());
         const payload = (await commentsResponse.json()) as { comments?: CommentItem[] };
         if (!cancelled) setComments(Array.isArray(payload.comments) ? payload.comments : []);
       } catch {
@@ -70,13 +74,13 @@ export function ArticleComments({ slug }: { slug: string }) {
     }
     setInvalid(false);
     writeVisitorContact(contact.name, contact.email);
-    ensureSessionId();
+    const sessionId = ensureSessionId();
     const text = body.trim();
     if (!text || text.length > maxBodyLength) return;
     const response = await fetch(`/api/articles/${slug}/comments`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ body: text, parentId, name: contact.name, email: contact.email }),
+      body: JSON.stringify({ body: text, parentId, name: contact.name, email: contact.email, sessionId }),
     });
     if (!response.ok) return;
     const created = (await response.json()) as CommentItem;
@@ -247,29 +251,38 @@ function CommentComposer({
     >
       {nameLabel && emailLabel && onName && onEmail ? (
         <div className="grid gap-2 sm:grid-cols-2">
-          <input
-            aria-label={nameLabel}
-            value={name ?? ""}
-            onChange={(event) => onName(event.target.value)}
-            className={`w-full rounded-md border bg-transparent px-3 py-2 ${border}`}
-          />
-          <input
-            aria-label={emailLabel}
-            type="email"
-            value={email ?? ""}
-            onChange={(event) => onEmail(event.target.value)}
-            className={`w-full rounded-md border bg-transparent px-3 py-2 ${border}`}
-          />
+          <label className="flex flex-col gap-1 text-sm">
+            <span>{nameLabel}</span>
+            <input
+              aria-label={nameLabel}
+              placeholder={nameLabel}
+              value={name ?? ""}
+              onChange={(event) => onName(event.target.value)}
+              className={`w-full rounded-md border bg-transparent px-3 py-2 placeholder:text-current placeholder:opacity-60 ${border}`}
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm">
+            <span>{emailLabel}</span>
+            <input
+              aria-label={emailLabel}
+              type="email"
+              placeholder={emailLabel}
+              value={email ?? ""}
+              onChange={(event) => onEmail(event.target.value)}
+              className={`w-full rounded-md border bg-transparent px-3 py-2 placeholder:text-current placeholder:opacity-60 ${border}`}
+            />
+          </label>
         </div>
       ) : null}
       {invalid ? <p>{invalid}</p> : null}
       <textarea
         aria-label={label}
+        placeholder={label}
         maxLength={maxBodyLength}
         rows={4}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className={`w-full rounded-md border bg-transparent px-3 py-2 ${border}`}
+        className={`w-full rounded-md border bg-transparent px-3 py-2 placeholder:text-current placeholder:opacity-60 ${border}`}
       />
       <div className="flex items-center justify-between gap-3 text-sm">
         <p aria-live="polite">{remainingLabel.replace("{count}", String(remaining))}</p>
