@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { seedCatalog } from "../db/seedCatalog";
 import { createTestDb } from "../db/testDb";
-import { signInIdentity } from "../db/users";
+import { signInGuest, signInIdentity } from "../db/users";
 import type { LoadedContent } from "../types/content";
 import { deleteReaction, getReactions, postReaction } from "./reactions";
 
@@ -77,4 +77,15 @@ it("stores one active reaction of each type and restores it after delete", async
 
   expect((await postReaction(db, "o-agente-secreto", session, "nope")).status).toBe(400);
   expect((await postReaction(db, "ausente", session, "like")).status).toBe(404);
+
+  const guest = await postReaction(db, "o-agente-secreto", null, "celebrate", {
+    name: "Grace",
+    email: "grace@example.com",
+  });
+  expect(guest.status).toBe(200);
+  const guestUser = await signInGuest(db, { name: "Grace", email: "grace@example.com" });
+  expect(guestUser.userId).not.toBe(member.userId);
+  const visible = await getReactions(db, "o-agente-secreto", null);
+  expect(count(visible.body, "celebrate")?.count).toBe(1);
+  expect((await postReaction(db, "o-agente-secreto", null, "support", { name: "Grace", email: "nope" })).status).toBe(400);
 });

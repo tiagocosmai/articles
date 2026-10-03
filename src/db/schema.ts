@@ -16,7 +16,14 @@ import {
 
 export const userRole = pgEnum("user_role", ["member", "admin"]);
 export const locale = pgEnum("locale", ["pt", "en", "es"]);
-export const identityProvider = pgEnum("identity_provider", ["github", "linkedin"]);
+export const identityProvider = pgEnum("identity_provider", [
+  "github",
+  "linkedin",
+  "gmail",
+  "magiclink",
+  "microsoft",
+  "guest",
+]);
 export const commentStatus = pgEnum("comment_status", ["pending", "approved", "rejected"]);
 export const reactionType = pgEnum("reaction_type", [
   "like",
@@ -40,6 +47,16 @@ export const users = pgTable("users", {
   role: userRole("role").notNull().default("member"),
   ...timestamps,
 });
+
+export const verificationTokens = pgTable(
+  "verification_tokens",
+  {
+    identifier: text("identifier").notNull(),
+    token: text("token").notNull(),
+    expires: timestamp("expires", { withTimezone: true, mode: "date" }).notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.identifier, table.token] })],
+);
 
 export const identities = pgTable(
   "identities",

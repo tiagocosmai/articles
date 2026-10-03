@@ -1,9 +1,13 @@
 import { and, eq } from "drizzle-orm";
+import type { GuestContact } from "../auth/guest";
 import { identities, users } from "./schema";
 import type { TestDatabase } from "./testDb";
 
+export const identityProviders = ["github", "linkedin", "gmail", "magiclink", "microsoft", "guest"] as const;
+export type IdentityProvider = (typeof identityProviders)[number];
+
 export type IdentityInput = {
-  provider: "github" | "linkedin";
+  provider: IdentityProvider;
   providerAccountId: string;
   providerUsername: string | null;
   name: string;
@@ -53,4 +57,16 @@ export async function signInIdentity(db: TestDatabase, input: IdentityInput) {
     providerUsername: input.providerUsername,
   });
   return { userId: user.id, role: user.role, name: user.name };
+}
+
+export async function signInGuest(db: TestDatabase, contact: GuestContact) {
+  const email = contact.email.trim().toLowerCase();
+  return signInIdentity(db, {
+    provider: "guest",
+    providerAccountId: email,
+    providerUsername: null,
+    name: contact.name,
+    email,
+    currentUserId: null,
+  });
 }

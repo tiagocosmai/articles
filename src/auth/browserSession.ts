@@ -15,11 +15,27 @@ export async function allowLoginCookie(): Promise<boolean> {
   }
 }
 
+export const loginSignalKey = "tiagocosmai-auth";
+
+export function publishLoginFinished() {
+  localStorage.setItem(loginSignalKey, String(Date.now()));
+}
+
 export async function readSignedIn(): Promise<boolean> {
   try {
-    const session = (await (await fetch("/api/auth/session")).json()) as { userId?: string };
+    const session = (await (await fetch("/api/auth/session", { credentials: "include" })).json()) as {
+      userId?: string;
+    };
     return Boolean(session.userId);
   } catch {
     return false;
   }
+}
+
+export async function waitForSignedIn(): Promise<boolean> {
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    if (await readSignedIn()) return true;
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+  return false;
 }

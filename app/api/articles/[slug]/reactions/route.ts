@@ -18,7 +18,10 @@ export async function GET(_request: Request, context: { params: Promise<{ slug: 
 
 export async function POST(request: Request, context: { params: Promise<{ slug: string }> }) {
   const { slug } = await context.params;
-  const body = (await request.json()) as { type?: string };
-  const result = await postReaction(getDb(), slug, await reader(), body.type ?? "");
+  const body = (await request.json()) as { type?: string; name?: string; email?: string };
+  const result = await postReaction(getDb(), slug, await reader(), body.type ?? "", {
+    name: body.name,
+    email: body.email,
+  });
   return Response.json(result.body, { status: result.status });
 }

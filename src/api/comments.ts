@@ -1,14 +1,12 @@
 import { and, asc, eq, isNull, or } from "drizzle-orm";
+import { guestContact } from "../auth/guest";
 import { visibleArticle } from "../db/reactions";
 import { comments, users } from "../db/schema";
 import type { TestDatabase } from "../db/testDb";
+import { signInGuest } from "../db/users";
 import type { ReaderSession } from "./reactions";
 
 const maxBodyLength = 1000;
-
-export function commentsAutoApprove(): boolean {
-  return process.env.COMMENTS_AUTO_APPROVE !== "false";
-}
 
 function present(
   row: {
@@ -37,12 +35,19 @@ export async function postComment(
   db: TestDatabase,
   slug: string,
   session: ReaderSession,
-  input: { body: string; parentId: string | null },
+  input: { body: string; parentId: string | null; name?: string; email?: string },
 ) {
-  if (!session) return { status: 401 as const, body: { message: "unauthorized" } };
   const body = input.body.trim();
   if (body.length === 0 || body.length > maxBodyLength) {
     return { status: 400 as const, body: { message: "invalid body" } };
+  }
+  const contact = guestContact(input.name, input.email);
+  let author = session;
+  if (!author) {
+    if ((input.name || input.email) && !contact) return { status: 400 as const, body: { message: "invalid contact" } };
+    if (!contact) return { status: 401 as const, body: { message: "unauthorized" } };
+    const guest = await signInGuest(db, contact);
+    author = { id: guest.userId, role: guest.role, name: guest.name };
   }
   const article = await visibleArticle(db, slug);
   if (!article) return { status: 404 as const, body: { message: "not found" } };
@@ -57,15 +62,15 @@ export async function postComment(
     .insert(comments)
     .values({
       articleId: article.id,
-      userId: session.id,
+      userId: author.id,
       parentId: input.parentId,
       body,
-      status: commentsAutoApprove() ? "approved" : "pending",
+      status: session ? "approved" : "pending",
     })
     .returning();
   return {
     status: 201 as const,
-    body: present({ ...created, userName: session.name }, session),
+    body: present({ ...created, userName: author.name }, author),
   };
 }
 
