@@ -43,7 +43,12 @@ export function ArticleReactions({
 
   async function press(type: string, mine: boolean) {
     if (!signedIn) {
-      window.location.href = `/api/auth/signin?callbackUrl=/${slug}`;
+      const path = `/api/auth/signin?callbackUrl=/${slug}`;
+      if (window.top && window.top !== window.self) {
+        window.top.location.href = new URL(path, window.location.origin).href;
+        return;
+      }
+      window.location.href = path;
       return;
     }
     const response = mine
