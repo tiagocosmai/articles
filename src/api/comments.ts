@@ -9,6 +9,11 @@ import type { ReaderSession } from "./reactions";
 
 const maxBodyLength = 1000;
 
+export function commentsAutoApprove(value = process.env.COMMENTS_AUTO_APPROVE): boolean {
+  if (value === undefined || value.trim() === "") return true;
+  return value.trim().toLowerCase() === "true";
+}
+
 function present(
   row: {
     id: string;
@@ -68,7 +73,7 @@ export async function postComment(
       userId: author.id,
       parentId: input.parentId,
       body,
-      status: "pending",
+      status: commentsAutoApprove() ? "approved" : "pending",
     })
     .returning();
   return {
@@ -97,7 +102,10 @@ export async function getComments(db: TestDatabase, slug: string, session: Reade
     .innerJoin(users, eq(users.id, comments.userId))
     .where(and(eq(comments.articleId, article.id), isNull(comments.deletedAt), visibility))
     .orderBy(asc(comments.createdAt));
-  return { status: 200 as const, body: { comments: rows.map((row) => present(row, session)) } };
+  return {
+    status: 200 as const,
+    body: { comments: rows.map((row) => present(row, session)), autoApprove: commentsAutoApprove() },
+  };
 }
 
 export async function deleteComment(db: TestDatabase, slug: string, session: ReaderSession, id: string) {

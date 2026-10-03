@@ -31,6 +31,7 @@ export function ArticleComments({ slug }: { slug: string }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [invalid, setInvalid] = useState(false);
+  const [autoApprove, setAutoApprove] = useState(true);
 
   function commentsUrl() {
     const sessionId = ensureSessionId();
@@ -39,8 +40,9 @@ export function ArticleComments({ slug }: { slug: string }) {
 
   async function load() {
     const commentsResponse = await fetch(commentsUrl());
-    const payload = (await commentsResponse.json()) as { comments?: CommentItem[] };
+    const payload = (await commentsResponse.json()) as { comments?: CommentItem[]; autoApprove?: boolean };
     setComments(Array.isArray(payload.comments) ? payload.comments : []);
+    if (typeof payload.autoApprove === "boolean") setAutoApprove(payload.autoApprove);
   }
 
   useEffect(() => {
@@ -55,8 +57,10 @@ export function ArticleComments({ slug }: { slug: string }) {
     void (async () => {
       try {
         const commentsResponse = await fetch(commentsUrl());
-        const payload = (await commentsResponse.json()) as { comments?: CommentItem[] };
-        if (!cancelled) setComments(Array.isArray(payload.comments) ? payload.comments : []);
+        const payload = (await commentsResponse.json()) as { comments?: CommentItem[]; autoApprove?: boolean };
+        if (cancelled) return;
+        setComments(Array.isArray(payload.comments) ? payload.comments : []);
+        if (typeof payload.autoApprove === "boolean") setAutoApprove(payload.autoApprove);
       } catch {
         if (!cancelled) setComments([]);
       }
@@ -112,7 +116,7 @@ export function ArticleComments({ slug }: { slug: string }) {
         value={draft}
         onChange={setDraft}
         onSubmit={() => void send(draft, null)}
-        submitLabel={t("login_guest_submit")}
+        submitLabel={autoApprove ? t("comments_submit") : t("login_guest_submit")}
         remainingLabel={t("comments_remaining")}
         border={border}
         name={name}
@@ -149,7 +153,7 @@ export function ArticleComments({ slug }: { slug: string }) {
                 value={replyDraft}
                 onChange={setReplyDraft}
                 onSubmit={() => void send(replyDraft, comment.id)}
-                submitLabel={t("login_guest_submit")}
+                submitLabel={autoApprove ? t("comments_submit") : t("login_guest_submit")}
                 remainingLabel={t("comments_remaining")}
                 border={border}
               />

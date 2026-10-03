@@ -31,7 +31,9 @@ const content: LoadedContent = {
 const sessionId = "6f4b1c0a-6a4e-4b1d-8c3e-1a2b3c4d5e6f";
 const contact = { sessionId, name: "Ada", email: "ada@example.com" };
 
-it("holds every name-and-email comment for moderation", async () => {
+it("holds every name-and-email comment for moderation when approval is off", async () => {
+  const previous = process.env.COMMENTS_AUTO_APPROVE;
+  process.env.COMMENTS_AUTO_APPROVE = "false";
   const db = await createTestDb();
   await seedCatalog(db, content);
   const other = await signInIdentity(db, {
@@ -58,7 +60,10 @@ it("holds every name-and-email comment for moderation", async () => {
   expect(author.userId).not.toBe(other.userId);
   const authorSession = { id: author.userId, role: author.role, name: author.name };
 
-  expect(await getComments(db, "o-agente-secreto", null)).toEqual({ status: 200, body: { comments: [] } });
+  expect(await getComments(db, "o-agente-secreto", null)).toEqual({
+    status: 200,
+    body: { comments: [], autoApprove: false },
+  });
   const own = await getComments(db, "o-agente-secreto", authorSession);
   if (own.status !== 200) throw new Error("expected comments");
   expect(own.body.comments).toHaveLength(1);
@@ -85,17 +90,25 @@ it("holds every name-and-email comment for moderation", async () => {
   if (afterDelete.status !== 200) throw new Error("expected comments");
   expect(afterDelete.body.comments).toHaveLength(0);
   expect((await deleteComment(db, "o-agente-secreto", otherSession, reply.body.id)).status).toBe(403);
+  if (previous === undefined) delete process.env.COMMENTS_AUTO_APPROVE;
+  else process.env.COMMENTS_AUTO_APPROVE = previous;
 });
 
-it("stores a comment as plain text and keeps it pending", async () => {
+it("publishes a plain-text comment when automatic approval is on", async () => {
+  const previous = process.env.COMMENTS_AUTO_APPROVE;
+  process.env.COMMENTS_AUTO_APPROVE = "true";
   const db = await createTestDb();
   await seedCatalog(db, content);
   const body = "'); DROP TABLE comments;--";
   const created = await postComment(db, "o-agente-secreto", { ...contact, body, parentId: null });
   expect(created.status).toBe(201);
   if (created.status !== 201) throw new Error("expected 201");
-  expect(created.body).toMatchObject({ status: "pending", body });
+  expect(created.body).toMatchObject({ status: "approved", body });
   const listed = await getComments(db, "o-agente-secreto", null);
   if (listed.status !== 200) throw new Error("expected comments");
-  expect(listed.body.comments).toHaveLength(0);
+  expect(listed.body.autoApprove).toBe(true);
+  expect(listed.body.comments).toHaveLength(1);
+  expect(listed.body.comments[0].body).toBe(body);
+  if (previous === undefined) delete process.env.COMMENTS_AUTO_APPROVE;
+  else process.env.COMMENTS_AUTO_APPROVE = previous;
 });
