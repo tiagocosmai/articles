@@ -1,9 +1,10 @@
 import { and, asc, eq, isNull, or } from "drizzle-orm";
 import { guestContact } from "../auth/guest";
+import { isSessionId } from "../auth/visitor";
 import { visibleArticle } from "../db/reactions";
 import { comments, users } from "../db/schema";
 import type { TestDatabase } from "../db/testDb";
-import { signInGuest } from "../db/users";
+import { signInVisitor } from "../db/users";
 import type { ReaderSession } from "./reactions";
 
 const maxBodyLength = 1000;
@@ -34,21 +35,23 @@ function present(
 export async function postComment(
   db: TestDatabase,
   slug: string,
-  session: ReaderSession,
-  input: { body: string; parentId: string | null; name?: string; email?: string },
+  input: { body: string; parentId: string | null; sessionId?: string; name?: string; email?: string },
 ) {
   const body = input.body.trim();
   if (body.length === 0 || body.length > maxBodyLength) {
     return { status: 400 as const, body: { message: "invalid body" } };
   }
   const contact = guestContact(input.name, input.email);
-  let author = session;
-  if (!author) {
-    if ((input.name || input.email) && !contact) return { status: 400 as const, body: { message: "invalid contact" } };
-    if (!contact) return { status: 401 as const, body: { message: "unauthorized" } };
-    const guest = await signInGuest(db, contact);
-    author = { id: guest.userId, role: guest.role, name: guest.name };
+  if (!input.sessionId || !isSessionId(input.sessionId)) {
+    return { status: 401 as const, body: { message: "unauthorized" } };
   }
+  if (!contact) return { status: 400 as const, body: { message: "invalid contact" } };
+  const authorRecord = await signInVisitor(db, {
+    sessionId: input.sessionId,
+    name: contact.name,
+    email: contact.email,
+  });
+  const author = { id: authorRecord.userId, role: authorRecord.role, name: authorRecord.name };
   const article = await visibleArticle(db, slug);
   if (!article) return { status: 404 as const, body: { message: "not found" } };
   if (input.parentId) {
@@ -65,7 +68,7 @@ export async function postComment(
       userId: author.id,
       parentId: input.parentId,
       body,
-      status: session ? "approved" : "pending",
+      status: "pending",
     })
     .returning();
   return {

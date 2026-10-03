@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocale } from "../context/LocaleContext";
 import { useTheme } from "../context/ThemeContext";
-import { allowLoginCookie, readSignedIn } from "../auth/browserSession";
-import { readGuestContact, writeGuestContact, type GuestContact } from "../auth/guest";
-import { LoginPrompt } from "./LoginPrompt";
+import { guestContact } from "../auth/guest";
+import { ensureSessionId, readVisitorContact, writeVisitorContact } from "../auth/visitor";
 
 const maxBodyLength = 1000;
 
@@ -25,36 +24,35 @@ export function ArticleComments({ slug }: { slug: string }) {
   const { locale, t } = useLocale();
   const { mode } = useTheme();
   const [comments, setComments] = useState<CommentItem[]>([]);
-  const [signedIn, setSignedIn] = useState(false);
   const [draft, setDraft] = useState("");
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [replyDraft, setReplyDraft] = useState("");
   const [pendingNotice, setPendingNotice] = useState(false);
-  const [loginOpen, setLoginOpen] = useState(false);
-  const [guest, setGuest] = useState<GuestContact | null>(null);
-  const pendingSend = useRef<{ body: string; parentId: string | null } | null>(null);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [invalid, setInvalid] = useState(false);
 
   async function load() {
     const commentsResponse = await fetch(`/api/articles/${slug}/comments`);
     const payload = (await commentsResponse.json()) as { comments?: CommentItem[] };
     setComments(Array.isArray(payload.comments) ? payload.comments : []);
-    setSignedIn(await readSignedIn());
   }
 
   useEffect(() => {
-    setGuest(readGuestContact());
+    const contact = readVisitorContact();
+    setName(contact.name);
+    setEmail(contact.email);
+    ensureSessionId();
   }, []);
 
   useEffect(() => {
     let cancelled = false;
     void (async () => {
       try {
+        ensureSessionId();
         const commentsResponse = await fetch(`/api/articles/${slug}/comments`);
         const payload = (await commentsResponse.json()) as { comments?: CommentItem[] };
-        if (cancelled) return;
-        await allowLoginCookie();
-        setComments(Array.isArray(payload.comments) ? payload.comments : []);
-        setSignedIn(await readSignedIn());
+        if (!cancelled) setComments(Array.isArray(payload.comments) ? payload.comments : []);
       } catch {
         if (!cancelled) setComments([]);
       }
@@ -64,29 +62,21 @@ export function ArticleComments({ slug }: { slug: string }) {
     };
   }, [slug]);
 
-  async function send(body: string, parentId: string | null, asGuest = guest, asSignedIn = signedIn) {
-    if (!asSignedIn && !asGuest) {
-      const allowed = await allowLoginCookie();
-      if (allowed && (await readSignedIn())) {
-        setSignedIn(true);
-        asSignedIn = true;
-      } else {
-        pendingSend.current = { body, parentId };
-        setLoginOpen(true);
-        return;
-      }
+  async function send(body: string, parentId: string | null) {
+    const contact = guestContact(name, email);
+    if (!contact) {
+      setInvalid(true);
+      return;
     }
+    setInvalid(false);
+    writeVisitorContact(contact.name, contact.email);
+    ensureSessionId();
     const text = body.trim();
     if (!text || text.length > maxBodyLength) return;
     const response = await fetch(`/api/articles/${slug}/comments`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        body: text,
-        parentId,
-        name: asSignedIn ? undefined : asGuest?.name,
-        email: asSignedIn ? undefined : asGuest?.email,
-      }),
+      body: JSON.stringify({ body: text, parentId, name: contact.name, email: contact.email }),
     });
     if (!response.ok) return;
     const created = (await response.json()) as CommentItem;
@@ -101,23 +91,6 @@ export function ArticleComments({ slug }: { slug: string }) {
       setPendingNotice(true);
       setComments((current) => (current.some((item) => item.id === created.id) ? current : [...current, created]));
     }
-  }
-
-  function acceptGuest(contact: GuestContact) {
-    writeGuestContact(contact);
-    setGuest(contact);
-    setLoginOpen(false);
-    const pending = pendingSend.current;
-    pendingSend.current = null;
-    if (pending) void send(pending.body, pending.parentId, contact, false);
-  }
-
-  function acceptSignIn() {
-    setSignedIn(true);
-    setLoginOpen(false);
-    const pending = pendingSend.current;
-    pendingSend.current = null;
-    if (pending) void send(pending.body, pending.parentId, null, true);
   }
 
   const border = mode === "dark" ? "border-brand/40" : "border-brand-light/40";
@@ -135,9 +108,22 @@ export function ArticleComments({ slug }: { slug: string }) {
         value={draft}
         onChange={setDraft}
         onSubmit={() => void send(draft, null)}
-        submitLabel={signedIn ? t("comments_submit") : guest ? t("login_guest_submit") : t("comments_sign_in")}
+        submitLabel={t("login_guest_submit")}
         remainingLabel={t("comments_remaining")}
         border={border}
+        name={name}
+        email={email}
+        nameLabel={t("login_guest_name")}
+        emailLabel={t("login_guest_email")}
+        onName={(value) => {
+          setName(value);
+          writeVisitorContact(value, email);
+        }}
+        onEmail={(value) => {
+          setEmail(value);
+          writeVisitorContact(name, value);
+        }}
+        invalid={invalid ? t("login_guest_invalid") : ""}
       />
       {topLevel.length === 0 && orphans.length === 0 ? <p>{t("comments_empty")}</p> : null}
       <ul className="flex flex-col gap-4">
@@ -159,7 +145,7 @@ export function ArticleComments({ slug }: { slug: string }) {
                 value={replyDraft}
                 onChange={setReplyDraft}
                 onSubmit={() => void send(replyDraft, comment.id)}
-                submitLabel={signedIn ? t("comments_reply") : guest ? t("login_guest_submit") : t("comments_sign_in")}
+                submitLabel={t("login_guest_submit")}
                 remainingLabel={t("comments_remaining")}
                 border={border}
               />
@@ -172,13 +158,6 @@ export function ArticleComments({ slug }: { slug: string }) {
           </li>
         ))}
       </ul>
-      <LoginPrompt
-        open={loginOpen}
-        slug={slug}
-        onClose={() => setLoginOpen(false)}
-        onSignedIn={acceptSignIn}
-        onGuest={acceptGuest}
-      />
       {pendingNotice ? (
         <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/60 px-4">
           <div
@@ -234,6 +213,13 @@ function CommentComposer({
   submitLabel,
   remainingLabel,
   border,
+  name,
+  email,
+  nameLabel,
+  emailLabel,
+  onName,
+  onEmail,
+  invalid,
 }: {
   label: string;
   value: string;
@@ -242,6 +228,13 @@ function CommentComposer({
   submitLabel: string;
   remainingLabel: string;
   border: string;
+  name?: string;
+  email?: string;
+  nameLabel?: string;
+  emailLabel?: string;
+  onName?: (value: string) => void;
+  onEmail?: (value: string) => void;
+  invalid?: string;
 }) {
   const remaining = maxBodyLength - value.length;
   return (
@@ -252,6 +245,24 @@ function CommentComposer({
         onSubmit();
       }}
     >
+      {nameLabel && emailLabel && onName && onEmail ? (
+        <div className="grid gap-2 sm:grid-cols-2">
+          <input
+            aria-label={nameLabel}
+            value={name ?? ""}
+            onChange={(event) => onName(event.target.value)}
+            className={`w-full rounded-md border bg-transparent px-3 py-2 ${border}`}
+          />
+          <input
+            aria-label={emailLabel}
+            type="email"
+            value={email ?? ""}
+            onChange={(event) => onEmail(event.target.value)}
+            className={`w-full rounded-md border bg-transparent px-3 py-2 ${border}`}
+          />
+        </div>
+      ) : null}
+      {invalid ? <p>{invalid}</p> : null}
       <textarea
         aria-label={label}
         maxLength={maxBodyLength}

@@ -10,10 +10,9 @@ export const authJsProviderId: Record<AuthMethodId, string> = {
   linkedin: "linkedin",
 };
 
-const defaultProviders = "GITHUB,GMAIL,MAGICLINK";
-
 export function enabledAuthMethods(value = process.env.AUTH_PROVIDERS): AuthMethodId[] {
-  const source = value === undefined || value.trim() === "" ? defaultProviders : value;
+  if (process.env.AUTH_LOGIN !== "true") return [];
+  const source = value === undefined || value.trim() === "" ? "" : value;
   const wanted = new Set(source.split(",").map((item) => item.trim().toLowerCase()));
   return authMethodIds.filter((id) => wanted.has(id));
 }
