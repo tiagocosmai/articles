@@ -1,5 +1,5 @@
 import { auth } from "../../../../../../src/auth";
-import { approveComment } from "../../../../../../src/api/adminComments";
+import { setCommentStatus } from "../../../../../../src/api/adminComments";
 import type { ReaderSession } from "../../../../../../src/api/reactions";
 import { getDb } from "../../../../../../src/db/client";
 
@@ -11,8 +11,10 @@ async function reader(): Promise<ReaderSession> {
   return { id: session.userId, role: session.role, name: session.user?.name ?? "" };
 }
 
-export async function POST(_request: Request, context: { params: Promise<{ id: string }> }) {
+export async function POST(request: Request, context: { params: Promise<{ id: string }> }) {
   const { id } = await context.params;
-  const result = await approveComment(getDb(), await reader(), id);
+  const payload = (await request.json().catch(() => null)) as { status?: unknown } | null;
+  const status = typeof payload?.status === "string" ? payload.status : "";
+  const result = await setCommentStatus(getDb(), await reader(), id, status);
   return Response.json(result.body, { status: result.status });
 }

@@ -11,7 +11,11 @@ async function reader(): Promise<ReaderSession> {
   return { id: session.userId, role: session.role, name: session.user?.name ?? "" };
 }
 
-export async function GET() {
-  const result = await listAdminComments(getDb(), await reader());
+export async function GET(request: Request) {
+  const url = new URL(request.url);
+  const result = await listAdminComments(getDb(), await reader(), {
+    status: url.searchParams.get("status") ?? undefined,
+    article: url.searchParams.get("article") ?? undefined,
+  });
   return Response.json(result.body, { status: result.status });
 }
