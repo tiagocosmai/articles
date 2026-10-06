@@ -1,15 +1,10 @@
-import { forbidden, redirect } from "next/navigation";
 import { auth } from "../../src/auth";
+import { AdminHome } from "../../src/admin/AdminHome";
 
 export const runtime = "nodejs";
 
 export default async function AdminPage() {
   const session = await auth();
-  if (!session?.userId) redirect("/api/auth/signin?callbackUrl=/admin");
-  if (session.role !== "admin") forbidden();
-  return (
-    <main>
-      <h1>{session.user?.name}</h1>
-    </main>
-  );
+  const role = session?.userId && (session.role === "admin" || session.role === "member") ? session.role : null;
+  return <AdminHome role={role} view="report" />;
 }

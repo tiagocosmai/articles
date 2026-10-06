@@ -1,5 +1,5 @@
 import { auth } from "../../../../src/auth";
-import { listAdminComments } from "../../../../src/api/adminComments";
+import { getAdminReport } from "../../../../src/api/adminReport";
 import type { ReaderSession } from "../../../../src/api/reactions";
 import { getDb } from "../../../../src/db/client";
 
@@ -11,11 +11,7 @@ async function reader(): Promise<ReaderSession> {
   return { id: session.userId, role: session.role, name: session.user?.name ?? "" };
 }
 
-export async function GET(request: Request) {
-  const url = new URL(request.url);
-  const result = await listAdminComments(getDb(), await reader(), {
-    status: url.searchParams.get("status") ?? undefined,
-    article: url.searchParams.get("article") ?? undefined,
-  });
+export async function GET() {
+  const result = await getAdminReport(getDb(), await reader());
   return Response.json(result.body, { status: result.status });
 }
