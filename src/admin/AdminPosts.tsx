@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+import type { ColumnDef } from "@tanstack/react-table";
 import type { AdminPost } from "../api/adminPosts";
+import { DataTable } from "./ui/DataTable";
 
 const stateLabel = { live: "No ar", hidden: "Oculto", empty: "Sem corpo" } as const;
 
@@ -155,6 +157,28 @@ export function AdminPosts() {
     );
   }
 
+  const postColumns: ColumnDef<any, AdminPost>[] = [
+    { id: "title", header: "Título", accessorFn: (post) => titleOf(post) },
+    { accessorKey: "slug", header: "Slug" },
+    { accessorKey: "publishedOn", header: "Data" },
+    { id: "state", header: "Estado", accessorFn: (post) => stateLabel[post.state] },
+    {
+      id: "actions",
+      header: "Ações",
+      cell: ({ row }) => (
+        <span className="flex flex-wrap gap-2">
+          <button type="button" onClick={() => setForm(formFrom(row.original))}>
+            Editar
+          </button>
+          <button type="button" onClick={() => void toggle(row.original)}>
+            {row.original.state === "hidden" ? "Ativar" : "Desativar"}
+          </button>
+          {rowError === row.original.id ? <p>Não foi possível salvar.</p> : null}
+        </span>
+      ),
+    },
+  ];
+
   return (
     <section>
       <button
@@ -167,29 +191,7 @@ export function AdminPosts() {
         Novo post
       </button>
       {posts.length === 0 ? <p>Não há posts.</p> : null}
-      {posts.length > 0 ? (
-        <table>
-          <tbody>
-            {posts.map((post) => (
-              <tr key={post.id}>
-                <td>{titleOf(post)}</td>
-                <td>{post.slug}</td>
-                <td>{post.publishedOn}</td>
-                <td>{stateLabel[post.state]}</td>
-                <td>
-                  <button type="button" onClick={() => setForm(formFrom(post))}>
-                    Editar
-                  </button>
-                  <button type="button" onClick={() => void toggle(post)}>
-                    {post.state === "hidden" ? "Ativar" : "Desativar"}
-                  </button>
-                  {rowError === post.id ? <p>Não foi possível salvar.</p> : null}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      ) : null}
+      {posts.length > 0 ? <DataTable data={posts} columns={postColumns} /> : null}
     </section>
   );
 }

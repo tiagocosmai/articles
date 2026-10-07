@@ -65,7 +65,7 @@ it("lists replies and filter links", async () => {
     </AdminFrame>,
   );
   expect(await screen.findByText("Resposta")).toBeInTheDocument();
-  expect(screen.getByRole("link", { name: "Pendente" })).toHaveAttribute("href", "/admin/comentarios?status=pending");
+  expect(screen.getByRole("tab", { name: "Pendente" })).toHaveAttribute("href", "/admin/comentarios?status=pending");
   expect(screen.getByRole("link", { name: "PT" })).toHaveAttribute("href", "/admin/comentarios?article=o-agente-secreto");
   expect(screen.getAllByRole("link", { name: "Todos" })[0]).toHaveAttribute("href", "/admin/comentarios");
 });

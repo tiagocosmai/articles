@@ -1,20 +1,25 @@
 import type { ReactNode } from "react";
+import { Tabs, TabsList, TabsPanel, TabsTrigger } from "./ui/Tabs";
+
+const sections = [
+  { value: "report", href: "/admin", label: "Relatório" },
+  { value: "comments", href: "/admin/comentarios", label: "Comentários" },
+  { value: "posts", href: "/admin/posts", label: "Posts" },
+] as const;
 
 export function AdminFrame({ view, children }: { view: "report" | "comments" | "posts"; children: ReactNode }) {
   return (
-    <main>
-      <nav aria-label="Administração">
-        <a href="/admin" aria-current={view === "report" ? "page" : undefined}>
-          Relatório
-        </a>
-        <a href="/admin/comentarios" aria-current={view === "comments" ? "page" : undefined}>
-          Comentários
-        </a>
-        <a href="/admin/posts" aria-current={view === "posts" ? "page" : undefined}>
-          Posts
-        </a>
-      </nav>
-      {children}
+    <main className="admin-panel min-h-full bg-surface-dark px-4 py-6 text-white [color-scheme:dark]">
+      <Tabs value={view} variant="primary">
+        <TabsList aria-label="Administração">
+          {sections.map((section) => (
+            <TabsTrigger key={section.value} value={section.value} href={section.href}>
+              {section.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+        <TabsPanel value={view}>{children}</TabsPanel>
+      </Tabs>
     </main>
   );
 }

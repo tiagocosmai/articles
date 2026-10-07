@@ -24,3 +24,15 @@ body {
   @apply border px-2 py-1 align-top;
   border-color: color-mix(in srgb, currentColor 20%, transparent);
 }
+
+.admin-panel nav { @apply mb-4 flex flex-wrap gap-3; }
+.admin-panel a:not([role="tab"]) { @apply underline; }
+.admin-panel table { @apply w-full border-collapse text-left text-sm; }
+.admin-panel th,
+.admin-panel td {
+  @apply border px-2 py-1 align-top;
+  border-color: color-mix(in srgb, currentColor 20%, transparent);
+}
+.admin-panel button { @apply rounded-full border border-white/30 px-3 py-1 text-sm; }
+.admin-panel input { @apply mb-2 block w-full max-w-md rounded border border-white/30 bg-transparent px-2 py-1; }
+.admin-panel label { @apply mt-3 block text-sm; }

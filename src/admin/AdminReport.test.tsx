@@ -28,8 +28,9 @@ it("shows one row of comment and reaction counts", async () => {
       <AdminReport />
     </AdminFrame>,
   );
-  expect(screen.getByRole("link", { name: "Relatório" })).toHaveAttribute("href", "/admin");
-  expect(screen.getByRole("link", { name: "Comentários" })).toHaveAttribute("href", "/admin/comentarios");
+  expect(screen.getByRole("main")).toHaveClass("bg-surface-dark", "text-white");
+  expect(screen.getByRole("tab", { name: "Relatório" })).toHaveAttribute("href", "/admin");
+  expect(screen.getByRole("tab", { name: "Comentários" })).toHaveAttribute("href", "/admin/comentarios");
   const row = await screen.findByRole("row", { name: /Antigo/ });
   expect(within(row).getAllByRole("cell").map((cell) => cell.textContent)).toEqual([
     "Antigo",

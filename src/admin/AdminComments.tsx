@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { ColumnDef } from "@tanstack/react-table";
 import type { AdminReportArticle } from "../api/adminReport";
+import { DataTable } from "./ui/DataTable";
+import { Tabs, TabsList, TabsTrigger } from "./ui/Tabs";
 
 type CommentStatus = "pending" | "approved" | "rejected";
 
@@ -88,15 +91,52 @@ export function AdminComments({ status, article }: { status: string | null; arti
 
   if (error) return <p>Não foi possível carregar.</p>;
   if (!rows) return null;
+  const columns: ColumnDef<any, CommentRow>[] = [
+    { accessorKey: "articleTitle", header: "Artigo" },
+    { accessorKey: "authorName", header: "Autor" },
+    {
+      id: "createdAt",
+      header: "Data",
+      accessorFn: (row) => new Date(row.createdAt).toLocaleDateString("pt-BR"),
+    },
+    { accessorKey: "status", header: "Status" },
+    { accessorKey: "body", header: "Comentário" },
+    { id: "reply", header: "Tipo", accessorFn: (row) => (row.parentId ? "Resposta" : "") },
+    {
+      id: "actions",
+      header: "Ações",
+      cell: ({ row }) => (
+        <span className="flex flex-wrap gap-2">
+          {statusLinks.slice(1).map((link) => (
+            <button
+              key={link.status}
+              type="button"
+              disabled={row.original.status === link.status}
+              onClick={() => void change(row.original, link.status as CommentStatus)}
+            >
+              {link.label}
+            </button>
+          ))}
+          <button type="button" onClick={() => void remove(row.original)}>
+            Excluir
+          </button>
+          {row.original.error ? <p>Não foi possível salvar.</p> : null}
+        </span>
+      ),
+    },
+  ];
+
   return (
     <section>
-      <nav aria-label="Status">
-        {statusLinks.map((link) => (
-          <a key={link.label} href={href(link.status, article)}>
-            {link.label}
-          </a>
-        ))}
-      </nav>
+      <Tabs value={status ?? "all"} variant="secondary">
+        <TabsList aria-label="Status" size="sm">
+          {statusLinks.map((link) => (
+            <TabsTrigger key={link.label} value={link.status ?? "all"} href={href(link.status, article)}>
+              {link.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
       <nav aria-label="Artigos">
         <a href={href(status, null)}>Todos</a>
         {articles.map((item) => (
@@ -106,36 +146,7 @@ export function AdminComments({ status, article }: { status: string | null; arti
         ))}
       </nav>
       {rows.length === 0 ? <p>Não há itens para o filtro atual.</p> : null}
-      <table>
-        <tbody>
-          {rows.map((row) => (
-            <tr key={row.id}>
-              <td>{row.articleTitle}</td>
-              <td>{row.authorName}</td>
-              <td>{new Date(row.createdAt).toLocaleDateString("pt-BR")}</td>
-              <td>{row.status}</td>
-              <td>{row.body}</td>
-              <td>{row.parentId ? "Resposta" : ""}</td>
-              <td>
-                {statusLinks.slice(1).map((link) => (
-                  <button
-                    key={link.status}
-                    type="button"
-                    disabled={row.status === link.status}
-                    onClick={() => void change(row, link.status as CommentStatus)}
-                  >
-                    {link.label}
-                  </button>
-                ))}
-                <button type="button" onClick={() => void remove(row)}>
-                  Excluir
-                </button>
-                {row.error ? <p>Não foi possível salvar.</p> : null}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      {rows.length > 0 ? <DataTable data={rows} columns={columns} /> : null}
     </section>
   );
 }

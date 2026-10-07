@@ -38,7 +38,7 @@ it("shows the posts link and the three states", async () => {
       <AdminPosts />
     </AdminFrame>,
   );
-  expect(screen.getByRole("link", { name: "Posts" })).toHaveAttribute("href", "/admin/posts");
+  expect(screen.getByRole("tab", { name: "Posts" })).toHaveAttribute("href", "/admin/posts");
   expect(await screen.findByText("No ar")).toBeInTheDocument();
   expect(screen.getByText("Oculto")).toBeInTheDocument();
   expect(screen.getByText("Sem corpo")).toBeInTheDocument();
