@@ -3,15 +3,16 @@ type StorageDocument = Document & {
   requestStorageAccess?: () => Promise<void>;
 };
 
-export async function allowLoginCookie(): Promise<boolean> {
+export function allowLoginCookie(): Promise<boolean> {
   const storage = document as StorageDocument;
-  if (window.top === window.self || !storage.requestStorageAccess) return true;
+  if (window.top === window.self || !storage.requestStorageAccess) return Promise.resolve(true);
   try {
-    if (storage.hasStorageAccess && (await storage.hasStorageAccess())) return true;
-    await storage.requestStorageAccess();
-    return true;
+    return storage.requestStorageAccess().then(
+      () => true,
+      () => false,
+    );
   } catch {
-    return false;
+    return Promise.resolve(false);
   }
 }
 

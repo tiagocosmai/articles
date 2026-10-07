@@ -9,6 +9,7 @@ import Resend from "next-auth/providers/resend";
 import { articlesAuthAdapter } from "./auth/adapter";
 import { linkedinTokenFetch } from "./auth/linkedinToken";
 import { listAuthMethods, storedAuthMethod } from "./auth/methods";
+import { embeddedSessionCookie } from "./auth/sessionCookie";
 import { authReturnUrl } from "./authReturn";
 import { getDb } from "./db/client";
 import { signInIdentity } from "./db/users";
@@ -75,6 +76,7 @@ export const { handlers, auth } = NextAuth({
   trustHost: true,
   adapter: magicLinkReady ? articlesAuthAdapter(getDb()) : undefined,
   session: { strategy: "jwt", maxAge: sessionMaxAge },
+  cookies: { sessionToken: { options: embeddedSessionCookie() } },
   pages: { verifyRequest: "/auth/verify" },
   providers: authProviders(),
   callbacks: {

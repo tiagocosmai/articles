@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { allowLoginCookie, loginSignalKey, waitForSignedIn } from "../auth/browserSession";
+import { allowLoginCookie, loginSignalKey, readSignedIn, waitForSignedIn } from "../auth/browserSession";
 import { guestContact, type GuestContact } from "../auth/guest";
 import { type AuthMethodId } from "../auth/methods";
 import { useLocale } from "../context/LocaleContext";
@@ -89,11 +89,26 @@ export function LoginPrompt({
       return;
     }
     setPopupBlocked(false);
+    let attempts = 0;
     const timer = window.setInterval(() => {
-      if (!popup.closed) return;
-      window.clearInterval(timer);
-      window.dispatchEvent(new StorageEvent("storage", { key: loginSignalKey }));
-    }, 400);
+      attempts += 1;
+      let closed = false;
+      try {
+        closed = popup.closed;
+      } catch {
+        closed = true;
+      }
+      void readSignedIn().then((signedIn) => {
+        if (signedIn) {
+          window.clearInterval(timer);
+          onSignedInRef.current();
+          onCloseRef.current();
+          return;
+        }
+        if (closed) setNeedsCookie(true);
+        if (attempts > 120) window.clearInterval(timer);
+      });
+    }, 500);
   }
 
   function submitGuest() {
@@ -162,7 +177,11 @@ export function LoginPrompt({
           {needsCookie ? (
             <button
               type="button"
-              onClick={() => window.dispatchEvent(new StorageEvent("storage", { key: loginSignalKey }))}
+              onClick={() => {
+                void allowLoginCookie().then(async (allowed) => {
+                  if (allowed && (await readSignedIn())) onSignedInRef.current();
+                });
+              }}
               className="rounded-full border border-brand/40 px-3 py-2 font-bold"
             >
               {t("login_keep")}
