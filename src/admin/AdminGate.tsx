@@ -1,32 +1,30 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { LoginPrompt } from "../components/LoginPrompt";
 import { LocaleProvider } from "../context/LocaleContext";
-import { adminBlogHome, adminDeniedMessage } from "./gate";
+import { adminDeniedMessage } from "./gate";
 
 export function AdminGate({
   role,
   returnPath,
-  go = (url: string) => window.location.assign(url),
   children,
 }: {
   role: "admin" | "member" | null;
   returnPath: string;
-  go?: (url: string) => void;
   children: ReactNode;
 }) {
-  const [open, setOpen] = useState(role === null);
+  const [open, setOpen] = useState(role !== "admin");
   const [denied, setDenied] = useState(role === "member");
 
-  useEffect(() => {
-    if (denied) go(adminBlogHome);
-  }, [denied, go]);
-
-  if (denied) return <p>{adminDeniedMessage}</p>;
   if (role !== "admin") {
     return (
       <LocaleProvider>
+        {denied ? (
+          <p className="fixed inset-x-0 top-6 z-40 mx-auto max-w-md rounded-lg bg-[#121816] px-4 py-3 text-center text-white">
+            {adminDeniedMessage}
+          </p>
+        ) : null}
         {open ? (
           <LoginPrompt
             open

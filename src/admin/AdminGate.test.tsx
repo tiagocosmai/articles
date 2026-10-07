@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AdminGate } from "./AdminGate";
-import { adminBlogHome, adminDeniedMessage } from "./gate";
+import { adminDeniedMessage } from "./gate";
 
 beforeEach(() => {
   localStorage.setItem("articles-locale", "pt");
@@ -34,14 +34,13 @@ it("renders admin content for an administrator", () => {
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 });
 
-it("tells another signed-in account and leaves for the blog", () => {
-  const go = vi.fn();
+it("tells another signed-in account and keeps the login open", () => {
   render(
-    <AdminGate role="member" returnPath="admin" go={go}>
+    <AdminGate role="member" returnPath="admin">
       <p>Relatório</p>
     </AdminGate>,
   );
   expect(screen.getByText(adminDeniedMessage)).toBeInTheDocument();
+  expect(screen.getByRole("dialog")).toBeInTheDocument();
   expect(screen.queryByText("Relatório")).not.toBeInTheDocument();
-  expect(go).toHaveBeenCalledWith(adminBlogHome);
 });
