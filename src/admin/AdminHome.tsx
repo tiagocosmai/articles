@@ -3,6 +3,7 @@
 import { AdminComments } from "./AdminComments";
 import { AdminFrame } from "./AdminFrame";
 import { AdminGate } from "./AdminGate";
+import { AdminPosts } from "./AdminPosts";
 import { AdminReport } from "./AdminReport";
 
 export function AdminHome({
@@ -12,14 +13,23 @@ export function AdminHome({
   article = null,
 }: {
   role: "admin" | "member" | null;
-  view: "report" | "comments";
+  view: "report" | "comments" | "posts";
   status?: string | null;
   article?: string | null;
 }) {
   return (
-    <AdminGate role={role} returnPath={view === "report" ? "admin" : "admin/comentarios"}>
+    <AdminGate
+      role={role}
+      returnPath={view === "report" ? "admin" : view === "comments" ? "admin/comentarios" : "admin/posts"}
+    >
       <AdminFrame view={view}>
-        {view === "report" ? <AdminReport /> : <AdminComments status={status} article={article} />}
+        {view === "report" ? (
+          <AdminReport />
+        ) : view === "comments" ? (
+          <AdminComments status={status} article={article} />
+        ) : (
+          <AdminPosts />
+        )}
       </AdminFrame>
     </AdminGate>
   );
