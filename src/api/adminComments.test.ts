@@ -38,6 +38,7 @@ const content: LoadedContent = {
     "o-agente-secreto.es.md": "cuerpo",
   },
   flashcards: {},
+  redirects: [],
 };
 
 it("lets only an admin change status, filter, and delete a comment", async () => {

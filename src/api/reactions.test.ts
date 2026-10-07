@@ -23,6 +23,7 @@ const content: LoadedContent = {
     "o-agente-secreto.es.md": "cuerpo",
   },
   flashcards: {},
+  redirects: [],
 };
 
 const types = ["like", "celebrate", "support", "love", "insightful", "funny"];

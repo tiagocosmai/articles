@@ -33,6 +33,7 @@ const content: LoadedContent = {
   ],
   markdown: {},
   flashcards: {},
+  redirects: [],
 };
 
 it("counts visible comments and reactions for an admin", async () => {

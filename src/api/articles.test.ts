@@ -24,6 +24,7 @@ const content: LoadedContent = {
     "o-agente-secreto.es.md": "cuerpo",
   },
   flashcards: {},
+  redirects: [],
 };
 
 it("returns 404 for a missing or deleted slug and 200 for a visible one", async () => {
@@ -31,7 +32,7 @@ it("returns 404 for a missing or deleted slug and 200 for a visible one", async 
   const list = await getArticleList(db);
   expect(list).toEqual({
     status: 200,
-    body: { articles: [], errors: [], markdown: {}, flashcards: {} },
+    body: { articles: [], errors: [], markdown: {}, flashcards: {}, redirects: [] },
   });
   expect(await getArticleBySlug(db, "ausente")).toEqual({
     status: 404,

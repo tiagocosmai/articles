@@ -26,6 +26,7 @@ const content: LoadedContent = {
     "o-agente-secreto.es.md": "cuerpo",
   },
   flashcards: {},
+  redirects: [],
 };
 
 const sessionId = "6f4b1c0a-6a4e-4b1d-8c3e-1a2b3c4d5e6f";

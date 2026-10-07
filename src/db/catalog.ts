@@ -1,6 +1,6 @@
 import { asc, desc, inArray, isNull } from "drizzle-orm";
 import type { Article, ArticleTag, Flashcard, LoadedContent, Locale } from "../types/content";
-import { articleLocales, articleTags, articles, flashcards, tagLocales, tags } from "./schema";
+import { articleLocales, articleSlugRedirects, articleTags, articles, flashcards, tagLocales, tags } from "./schema";
 import type { TestDatabase } from "./testDb";
 
 const locales: Locale[] = ["pt", "en", "es"];
@@ -12,7 +12,7 @@ export async function readPublishedCatalog(db: TestDatabase): Promise<LoadedCont
     .where(isNull(articles.deletedAt))
     .orderBy(desc(articles.publishedOn), asc(articles.slug));
 
-  const empty: LoadedContent = { articles: [], errors: [], markdown: {}, flashcards: {} };
+  const empty: LoadedContent = { articles: [], errors: [], markdown: {}, flashcards: {}, redirects: [] };
   if (published.length === 0) return empty;
 
   const ids = published.map((article) => article.id);
@@ -42,10 +42,13 @@ export async function readPublishedCatalog(db: TestDatabase): Promise<LoadedCont
   const markdown: Record<string, string> = {};
   const cards: Record<string, Flashcard[]> = {};
   const visible: Article[] = [];
+  const liveIds: string[] = [];
+  const slugById = new Map<string, string>();
 
   for (const article of published) {
     const translations = localeRows.filter((row) => row.articleId === article.id);
     if (!locales.every((locale) => translations.some((row) => row.locale === locale))) continue;
+    if (translations.some((row) => row.body.trim() === "")) continue;
 
     const articleTagsForPage: ArticleTag[] = [];
     for (const link of linkRows.filter((row) => row.articleId === article.id)) {
@@ -76,7 +79,20 @@ export async function readPublishedCatalog(db: TestDatabase): Promise<LoadedCont
       tags: articleTagsForPage,
       locales: localesForPage,
     });
+    liveIds.push(article.id);
+    slugById.set(article.id, article.slug);
   }
 
-  return { articles: visible, errors: [], markdown, flashcards: cards };
+  const redirectRows =
+    liveIds.length === 0
+      ? []
+      : await db.select().from(articleSlugRedirects).where(inArray(articleSlugRedirects.articleId, liveIds));
+
+  return {
+    articles: visible,
+    errors: [],
+    markdown,
+    flashcards: cards,
+    redirects: redirectRows.map((row) => ({ from: row.slug, to: slugById.get(row.articleId) ?? row.slug })),
+  };
 }

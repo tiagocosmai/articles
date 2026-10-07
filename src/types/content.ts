@@ -29,9 +29,12 @@ export type ContentFiles = {
 
 export type CatalogError = { slug: string; message: string };
 
+export type ArticleRedirect = { from: string; to: string };
+
 export type LoadedContent = {
   articles: Article[];
   errors: CatalogError[];
   markdown: Record<string, string>;
   flashcards: Record<string, Flashcard[]>;
+  redirects: ArticleRedirect[];
 };
