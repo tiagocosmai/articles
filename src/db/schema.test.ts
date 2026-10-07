@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { eq } from "drizzle-orm";
-import { articles, reactions, users } from "./schema";
+import { articleSlugRedirects, articles, reactions, users } from "./schema";
 import { createTestDb } from "./testDb";
 
 it("allows one active reaction of each type and a new row after soft delete", async () => {
@@ -36,4 +36,14 @@ it("allows one active reaction of each type and a new row after soft delete", as
     userId: user.id,
     type: "love",
   });
+});
+
+it("rejects two redirects with the same former slug", async () => {
+  const db = await createTestDb();
+  const [first] = await db.insert(articles).values({ slug: "nota", publishedOn: "2026-10-01" }).returning();
+  const [second] = await db.insert(articles).values({ slug: "outra", publishedOn: "2026-10-02" }).returning();
+  await db.insert(articleSlugRedirects).values({ slug: "antiga", articleId: first.id });
+  await expect(
+    db.insert(articleSlugRedirects).values({ slug: "antiga", articleId: second.id }),
+  ).rejects.toThrow();
 });

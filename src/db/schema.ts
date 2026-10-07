@@ -83,6 +83,13 @@ export const articles = pgTable("articles", {
   ...timestamps,
 });
 
+export const articleSlugRedirects = pgTable("article_slug_redirects", {
+  slug: text("slug").primaryKey(),
+  articleId: uuid("article_id")
+    .notNull()
+    .references(() => articles.id),
+});
+
 export const articleLocales = pgTable(
   "article_locales",
   {

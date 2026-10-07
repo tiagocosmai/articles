@@ -22,6 +22,13 @@
       "when": 1791060000000,
       "tag": "0002_auth_methods",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791070000000,
+      "tag": "0003_article_slug_redirects",
+      "breakpoints": true
     }
   ]
 }
