@@ -263,4 +263,28 @@ describe("Article", () => {
     ).not.toBeInTheDocument();
     expect(screen.queryByText(FRONT)).not.toBeInTheDocument();
   });
+
+  it("replaces a former slug with the live article", async () => {
+    const content: LoadedContent = {
+      errors: [],
+      articles: [
+        {
+          slug: "nota-nova",
+          date: "2026-10-07",
+          tags: [],
+          locales: {
+            pt: { title: "Nota nova", description: "d", markdown: "nota-nova.pt.md" },
+            en: { title: "New note", description: "d", markdown: "nota-nova.en.md" },
+            es: { title: "Nota nueva", description: "d", markdown: "nota-nova.es.md" },
+          },
+        },
+      ],
+      markdown: { "nota-nova.pt.md": "corpo novo", "nota-nova.en.md": "new body", "nota-nova.es.md": "cuerpo nuevo" },
+      flashcards: {},
+      redirects: [{ from: "nota", to: "nota-nova" }],
+    };
+    await renderAt("/nota", content);
+    expect(await screen.findByText("corpo novo")).toBeInTheDocument();
+    expect(screen.queryByText("Artigo não encontrado")).not.toBeInTheDocument();
+  });
 });

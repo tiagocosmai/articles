@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { BlogLink } from "../components/BlogLink";
 import { ArticleComments } from "../components/ArticleComments";
@@ -24,7 +24,13 @@ export function ArticlePage({ content }: { content: LoadedContent }) {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const article = content.articles.find((item) => item.slug === slug);
+  const redirect = article ? undefined : content.redirects.find((item) => item.from === slug);
 
+  useEffect(() => {
+    if (redirect) navigate(`/${redirect.to}`, { replace: true });
+  }, [navigate, redirect]);
+
+  if (redirect) return null;
   if (!article) {
     return <NotFoundPage />;
   }
