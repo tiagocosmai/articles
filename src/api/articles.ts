@@ -11,7 +11,11 @@ export async function getArticleList(db: TestDatabase): Promise<{ status: 200; b
 export async function getArticleBySlug(db: TestDatabase, slug: string) {
   const catalog = await readPublishedCatalog(db);
   const article = catalog.articles.find((item) => item.slug === slug);
-  if (!article) return { status: 404 as const, body: { message: "not found" } };
+  if (!article) {
+    const redirect = catalog.redirects.find((item) => item.from === slug);
+    if (redirect) return { status: 301 as const, body: { slug: redirect.to } };
+    return { status: 404 as const, body: { message: "not found" } };
+  }
 
   const markdown: Record<string, string> = {};
   const cards: Record<string, Flashcard[]> = {};
