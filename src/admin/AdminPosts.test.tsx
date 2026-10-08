@@ -44,6 +44,7 @@ it("shows the posts link and the three states", async () => {
   expect(screen.getByText("Oculto")).toBeInTheDocument();
   expect(screen.getByText("Sem corpo")).toBeInTheDocument();
   expect(screen.getByText("Vazio")).toBeInTheDocument();
+  expect(screen.getAllByRole("link", { name: "Visualizar" })[0]).toHaveAttribute("href", "/admin/preview/nota");
 });
 
 it("shows the empty sentence", async () => {

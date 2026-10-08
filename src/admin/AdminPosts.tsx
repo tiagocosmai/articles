@@ -212,6 +212,7 @@ export function AdminPosts() {
       header: "Ações",
       cell: ({ row }) => (
         <span className="flex flex-wrap gap-2">
+          <a href={`/admin/preview/${row.original.slug}`}>Visualizar</a>
           <button type="button" onClick={() => setForm(formFrom(row.original))}>
             Editar
           </button>
