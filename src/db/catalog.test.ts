@@ -64,6 +64,6 @@ it("hides an empty body and lists redirects only for a live post", async () => {
   ]);
 
   const content = await readPublishedCatalog(db);
-  expect(content.articles.map((article) => article.slug)).toEqual(["futuro", "nota-nova"]);
+  expect(content.articles.map((article) => article.slug)).toEqual(["nota-nova"]);
   expect(content.redirects).toEqual([{ from: "nota", to: "nota-nova" }]);
 });

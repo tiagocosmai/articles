@@ -3,9 +3,15 @@
 import { useEffect, useState, type FormEvent } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { AdminPost } from "../api/adminPosts";
+import { linkedInShareHref } from "../share/articleShareUrl";
 import { DataTable } from "./ui/DataTable";
 
-const stateLabel = { live: "No ar", hidden: "Oculto", empty: "Sem corpo" } as const;
+const stateLabel = {
+  live: "No ar",
+  hidden: "Oculto",
+  empty: "Sem corpo",
+  scheduled: "Agendado",
+} as const;
 
 type FormState = {
   id: string | null;
@@ -45,6 +51,9 @@ export function AdminPosts() {
   const [form, setForm] = useState<FormState | null>(null);
   const [saveError, setSaveError] = useState(false);
   const [rowError, setRowError] = useState<string | null>(null);
+  const [importErrors, setImportErrors] = useState<string[] | null>(null);
+  const [importConflict, setImportConflict] = useState<{ markdown: string; slug: string } | null>(null);
+  const fileInputId = "admin-import-markdown";
 
   useEffect(() => {
     let stopped = false;
@@ -88,6 +97,42 @@ export function AdminPosts() {
     });
     setSaveError(false);
     setForm(null);
+  }
+
+  async function runImport(markdown: string, action?: "create" | "update" | "cancel") {
+    const response = await fetch("/api/admin/posts/import", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ markdown, action }),
+    });
+    if (!response.ok) return;
+    const body = (await response.json()) as
+      | { status: "invalid"; errors: string[] }
+      | { status: "ready"; slug: string; conflict: boolean }
+      | { status: "created" | "updated"; post: AdminPost }
+      | { status: "cancelled" };
+    if (body.status === "invalid") {
+      setImportErrors(body.errors);
+      return;
+    }
+    setImportErrors(null);
+    if (body.status === "ready") {
+      if (body.conflict) {
+        setImportConflict({ markdown, slug: body.slug });
+        return;
+      }
+      await runImport(markdown, "create");
+      return;
+    }
+    if (body.status === "created" || body.status === "updated") {
+      setImportConflict(null);
+      setPosts((current) => {
+        if (!current) return [body.post];
+        const index = current.findIndex((item) => item.id === body.post.id);
+        if (index === -1) return [...current, body.post];
+        return current.map((item) => (item.id === body.post.id ? body.post : item));
+      });
+    }
   }
 
   async function toggle(post: AdminPost) {
@@ -173,6 +218,15 @@ export function AdminPosts() {
           <button type="button" onClick={() => void toggle(row.original)}>
             {row.original.state === "hidden" ? "Ativar" : "Desativar"}
           </button>
+          {row.original.state === "live" && row.original.linkedInPt ? (
+            <a href={linkedInShareHref(row.original.linkedInPt)} target="_blank" rel="noreferrer">
+              Compartilhar no LinkedIn
+            </a>
+          ) : (
+            <button type="button" disabled>
+              Compartilhar no LinkedIn
+            </button>
+          )}
           {rowError === row.original.id ? <p>Não foi possível salvar.</p> : null}
         </span>
       ),
@@ -181,15 +235,61 @@ export function AdminPosts() {
 
   return (
     <section>
-      <button
-        type="button"
-        onClick={() => {
-          setSaveError(false);
-          setForm(blankForm());
-        }}
-      >
-        Novo post
-      </button>
+      <div className="mb-4 flex flex-wrap gap-3">
+        <button
+          type="button"
+          onClick={() => {
+            setSaveError(false);
+            setForm(blankForm());
+          }}
+        >
+          Novo post
+        </button>
+        <button type="button" onClick={() => document.getElementById(fileInputId)?.click()}>
+          Importar markdown
+        </button>
+        <input
+          id={fileInputId}
+          type="file"
+          accept=".md,text/markdown"
+          className="hidden"
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            event.target.value = "";
+            if (!file) return;
+            void file.text().then((markdown) => runImport(markdown));
+          }}
+        />
+      </div>
+      {importErrors ? (
+        <div role="alert">
+          <p>O arquivo não pôde ser importado:</p>
+          <ul>
+            {importErrors.map((error) => (
+              <li key={error}>{error}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+      {importConflict ? (
+        <div role="dialog" aria-label="Slug já existe">
+          <p>
+            O slug <strong>{importConflict.slug}</strong> já existe. Deseja atualizar o post ou recusar a importação?
+          </p>
+          <button type="button" onClick={() => void runImport(importConflict.markdown, "update")}>
+            Atualizar
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setImportConflict(null);
+              void runImport(importConflict.markdown, "cancel");
+            }}
+          >
+            Recusar
+          </button>
+        </div>
+      ) : null}
       {posts.length === 0 ? <p>Não há posts.</p> : null}
       {posts.length > 0 ? <DataTable data={posts} columns={postColumns} /> : null}
     </section>

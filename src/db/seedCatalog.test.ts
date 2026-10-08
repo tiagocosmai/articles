@@ -26,6 +26,7 @@ const content: LoadedContent = {
   flashcards: {
     "o-agente-secreto.pt.json": [{ id: "card", front: "frente", back: "verso" }],
   },
+  linkedinPosts: {},
   redirects: [],
 };
 

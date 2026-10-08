@@ -1,6 +1,16 @@
 import { asc, desc, inArray, isNull } from "drizzle-orm";
 import type { Article, ArticleTag, Flashcard, LoadedContent, Locale } from "../types/content";
-import { articleLocales, articleSlugRedirects, articleTags, articles, flashcards, tagLocales, tags } from "./schema";
+import { isPublishedOnOrBefore, todayUtcDate } from "./publishDate";
+import {
+  articleLinkedinPosts,
+  articleLocales,
+  articleSlugRedirects,
+  articleTags,
+  articles,
+  flashcards,
+  tagLocales,
+  tags,
+} from "./schema";
 import type { TestDatabase } from "./testDb";
 
 const locales: Locale[] = ["pt", "en", "es"];
@@ -12,7 +22,14 @@ export async function readPublishedCatalog(db: TestDatabase): Promise<LoadedCont
     .where(isNull(articles.deletedAt))
     .orderBy(desc(articles.publishedOn), asc(articles.slug));
 
-  const empty: LoadedContent = { articles: [], errors: [], markdown: {}, flashcards: {}, redirects: [] };
+  const empty: LoadedContent = {
+    articles: [],
+    errors: [],
+    markdown: {},
+    flashcards: {},
+    linkedinPosts: {},
+    redirects: [],
+  };
   if (published.length === 0) return empty;
 
   const ids = published.map((article) => article.id);
@@ -45,7 +62,15 @@ export async function readPublishedCatalog(db: TestDatabase): Promise<LoadedCont
   const liveIds: string[] = [];
   const slugById = new Map<string, string>();
 
+  const today = todayUtcDate();
+  const linkedInRows =
+    ids.length === 0
+      ? []
+      : await db.select().from(articleLinkedinPosts).where(inArray(articleLinkedinPosts.articleId, ids));
+  const linkedinPosts: LoadedContent["linkedinPosts"] = {};
+
   for (const article of published) {
+    if (!isPublishedOnOrBefore(article.publishedOn, today)) continue;
     const translations = localeRows.filter((row) => row.articleId === article.id);
     if (!locales.every((locale) => translations.some((row) => row.locale === locale))) continue;
     if (translations.some((row) => row.body.trim() === "")) continue;
@@ -73,6 +98,12 @@ export async function readPublishedCatalog(db: TestDatabase): Promise<LoadedCont
       if (deck.length > 0) cards[`${article.slug}.${row.locale}.json`] = deck;
     }
 
+    const linkedInForSlug: Partial<Record<Locale, string>> = {};
+    for (const row of linkedInRows.filter((item) => item.articleId === article.id)) {
+      linkedInForSlug[row.locale] = row.body;
+    }
+    if (Object.keys(linkedInForSlug).length > 0) linkedinPosts[article.slug] = linkedInForSlug;
+
     visible.push({
       slug: article.slug,
       date: article.publishedOn,
@@ -93,6 +124,7 @@ export async function readPublishedCatalog(db: TestDatabase): Promise<LoadedCont
     errors: [],
     markdown,
     flashcards: cards,
+    linkedinPosts,
     redirects: redirectRows.map((row) => ({ from: row.slug, to: slugById.get(row.articleId) ?? row.slug })),
   };
 }

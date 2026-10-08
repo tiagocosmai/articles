@@ -136,6 +136,7 @@ export function ArticlePage({ content }: { content: LoadedContent }) {
                 description={article.locales[locale].description}
                 date={article.date}
                 markdown={typeof markdown === "string" ? markdown : ""}
+                linkedInMessage={content.linkedinPosts[article.slug]?.[locale]}
               />
             </div>
           </header>

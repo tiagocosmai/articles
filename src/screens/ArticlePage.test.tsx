@@ -281,6 +281,7 @@ describe("Article", () => {
       ],
       markdown: { "nota-nova.pt.md": "corpo novo", "nota-nova.en.md": "new body", "nota-nova.es.md": "cuerpo nuevo" },
       flashcards: {},
+      linkedinPosts: {},
       redirects: [{ from: "nota", to: "nota-nova" }],
     };
     await renderAt("/nota", content);

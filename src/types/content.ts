@@ -36,5 +36,6 @@ export type LoadedContent = {
   errors: CatalogError[];
   markdown: Record<string, string>;
   flashcards: Record<string, Flashcard[]>;
+  linkedinPosts: Record<string, Partial<Record<Locale, string>>>;
   redirects: ArticleRedirect[];
 };

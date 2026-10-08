@@ -33,6 +33,7 @@ const content: LoadedContent = {
   ],
   markdown: {},
   flashcards: {},
+  linkedinPosts: {},
   redirects: [],
 };
 

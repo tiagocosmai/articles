@@ -25,12 +25,14 @@ export function ArticleShare({
   description,
   date,
   markdown,
+  linkedInMessage,
 }: {
   slug: string;
   title: string;
   description: string;
   date: string;
   markdown: string;
+  linkedInMessage?: string | null;
 }) {
   const { locale, t } = useLocale();
   const { mode } = useTheme();
@@ -42,6 +44,7 @@ export function ArticleShare({
     description,
     url,
   });
+  const linkedInText = linkedInMessage?.trim() ? linkedInMessage : message;
   const buttonClass =
     mode === "dark"
       ? "border-brand/40 text-brand"
@@ -87,7 +90,7 @@ export function ArticleShare({
   return (
     <div role="group" aria-label={t("share_label")} className="flex shrink-0 items-center gap-2">
       <a
-        href={linkedInShareHref(message)}
+        href={linkedInShareHref(linkedInText)}
         target="_blank"
         rel="noreferrer"
         aria-label={t("share_linkedin")}

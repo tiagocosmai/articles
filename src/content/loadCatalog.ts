@@ -73,7 +73,7 @@ export function loadCatalog(): LoadedContent {
     }
   }
 
-  return { articles, errors, markdown, flashcards, redirects: [] };
+  return { articles, errors, markdown, flashcards, linkedinPosts: {}, redirects: [] };
 }
 
 export function reportCatalogErrors(errors: CatalogError[]): void {

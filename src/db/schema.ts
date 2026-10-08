@@ -99,6 +99,19 @@ export const articleLocales = pgTable(
     locale: locale("locale").notNull(),
     title: text("title").notNull(),
     description: text("description").notNull(),
+    objective: text("objective").notNull().default(""),
+    body: text("body").notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.articleId, table.locale] })],
+);
+
+export const articleLinkedinPosts = pgTable(
+  "article_linkedin_posts",
+  {
+    articleId: uuid("article_id")
+      .notNull()
+      .references(() => articles.id, { onDelete: "cascade" }),
+    locale: locale("locale").notNull(),
     body: text("body").notNull(),
   },
   (table) => [primaryKey({ columns: [table.articleId, table.locale] })],

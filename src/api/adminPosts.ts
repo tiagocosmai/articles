@@ -1,5 +1,6 @@
 import { and, asc, desc, eq } from "drizzle-orm";
-import { articleLocales, articleSlugRedirects, articles } from "../db/schema";
+import { isPublishedOnOrBefore, todayUtcDate } from "../db/publishDate";
+import { articleLinkedinPosts, articleLocales, articleSlugRedirects, articles } from "../db/schema";
 import type { TestDatabase } from "../db/testDb";
 import type { ReaderSession } from "./reactions";
 
@@ -13,7 +14,8 @@ export type AdminPost = {
   publishedOn: string;
   title: Copy;
   description: Copy;
-  state: "live" | "hidden" | "empty";
+  state: "live" | "hidden" | "empty" | "scheduled";
+  linkedInPt: string | null;
 };
 
 function denied(session: ReaderSession) {
@@ -81,15 +83,28 @@ function present(
     description[locale] = row?.description ?? "";
     bodies.push(row?.body ?? "");
   }
-  const state = bodies.some((body) => body.trim() === "") ? "empty" : article.deletedAt ? "hidden" : "live";
-  return { id: article.id, slug: article.slug, publishedOn: article.publishedOn, title, description, state };
+  let state: AdminPost["state"] = "live";
+  if (bodies.some((body) => body.trim() === "")) state = "empty";
+  else if (article.deletedAt) state = "hidden";
+  else if (!isPublishedOnOrBefore(article.publishedOn, todayUtcDate())) state = "scheduled";
+  return {
+    id: article.id,
+    slug: article.slug,
+    publishedOn: article.publishedOn,
+    title,
+    description,
+    state,
+    linkedInPt: null,
+  };
 }
 
-async function loadPost(db: TestDatabase, id: string) {
+export async function loadPost(db: TestDatabase, id: string, linkedInPt: string | null = null): Promise<AdminPost | null> {
   const [article] = await db.select().from(articles).where(eq(articles.id, id));
   if (!article) return null;
   const localeRows = await db.select().from(articleLocales).where(eq(articleLocales.articleId, id));
-  return present(article, localeRows);
+  const post = present(article, localeRows);
+  post.linkedInPt = linkedInPt;
+  return post;
 }
 
 async function ownerOf(db: TestDatabase, slug: string) {
@@ -116,9 +131,23 @@ export async function listAdminPosts(db: TestDatabase, session: ReaderSession) {
   if (blocked) return blocked;
   const rows = await db.select().from(articles).orderBy(desc(articles.publishedOn), asc(articles.slug));
   const localeRows = await db.select().from(articleLocales);
+  const linkedInRows = await db
+    .select()
+    .from(articleLinkedinPosts)
+    .where(eq(articleLinkedinPosts.locale, "pt"));
+  const linkedInByArticle = new Map(linkedInRows.map((row) => [row.articleId, row.body]));
   return {
     status: 200 as const,
-    body: { posts: rows.map((article) => present(article, localeRows.filter((row) => row.articleId === article.id))) },
+    body: {
+      posts: rows.map((article) => {
+        const post = present(
+          article,
+          localeRows.filter((row) => row.articleId === article.id),
+        );
+        post.linkedInPt = linkedInByArticle.get(article.id) ?? null;
+        return post;
+      }),
+    },
   };
 }
 

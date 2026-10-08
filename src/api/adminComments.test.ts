@@ -38,6 +38,7 @@ const content: LoadedContent = {
     "o-agente-secreto.es.md": "cuerpo",
   },
   flashcards: {},
+  linkedinPosts: {},
   redirects: [],
 };
 

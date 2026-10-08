@@ -10,6 +10,7 @@ const post = {
   title: { pt: "Nota", en: "Note", es: "Nota" },
   description: { pt: "d", en: "d", es: "d" },
   state: "live" as const,
+  linkedInPt: "Texto do LinkedIn",
 };
 
 function json(body: unknown, status = 200) {
