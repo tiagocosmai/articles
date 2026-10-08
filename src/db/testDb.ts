@@ -11,3 +11,6 @@ export async function createTestDb() {
 }
 
 export type TestDatabase = Awaited<ReturnType<typeof createTestDb>>;
+export type TestDbTransaction = Parameters<Parameters<TestDatabase["transaction"]>[0]>[0];
+/** Database handle or an open transaction — same query API. */
+export type DbExecutor = TestDatabase | TestDbTransaction;

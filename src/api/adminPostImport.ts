@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import {
   parseEditorialMarkdown,
   tagCodeFromPortugueseLabel,
@@ -14,7 +14,7 @@ import {
   tagLocales,
   tags,
 } from "../db/schema";
-import type { TestDatabase } from "../db/testDb";
+import type { DbExecutor, TestDatabase } from "../db/testDb";
 import type { Locale } from "../types/content";
 import { loadPost, type AdminPost } from "./adminPosts";
 import type { ReaderSession } from "./reactions";
@@ -44,7 +44,7 @@ export async function inspectEditorialImport(db: TestDatabase, markdown: string)
 }
 
 async function ensureTags(
-  tx: TestDatabase,
+  tx: DbExecutor,
   parsed: ParsedEditorial,
 ): Promise<{ tagId: string; position: number }[]> {
   const result: { tagId: string; position: number }[] = [];
@@ -79,7 +79,7 @@ async function ensureTags(
   return result;
 }
 
-async function writeEditorialContent(tx: TestDatabase, articleId: string, parsed: ParsedEditorial) {
+async function writeEditorialContent(tx: DbExecutor, articleId: string, parsed: ParsedEditorial) {
   for (const locale of locales) {
     const localeData = parsed.locales[locale];
     await tx
@@ -149,7 +149,7 @@ export async function importEditorialMarkdown(
   | { status: 200; body: { status: "ready"; slug: string; conflict: boolean } }
   | { status: 200; body: { status: "cancelled" } }
   | { status: 200; body: { status: "created" | "updated"; post: AdminPost } }
-  | { status: 400; body: { message: string } }
+  | { status: 400 | 404; body: { message: string } }
 > {
   const blocked = denied(session);
   if (blocked) return blocked;
