@@ -3,6 +3,7 @@ import type { Locale } from "../types/content";
 export const ui: Record<Locale, Record<string, string>> = {
   pt: {
     site_name: "Artigos — Tiago Cosmai",
+    blog_title: "Blog",
     theme_to_light: "Mudar para o tema claro",
     theme_to_dark: "Mudar para o tema escuro",
     search_label: "Busca",
@@ -26,7 +27,7 @@ export const ui: Record<Locale, Record<string, string>> = {
     not_found_body: "Esse artigo não existe ou foi removido.",
     back_home: "Voltar para a home",
     back_blog: "Voltar para o blog",
-    share_intro: "Olha esse artigo bacana que eu encontrei...",
+    share_intro: "Encontrei no blog do Tiago Cosmai:",
     share_label: "Compartilhar",
     share_linkedin: "Compartilhar no LinkedIn",
     share_whatsapp: "Compartilhar no WhatsApp",
@@ -80,6 +81,7 @@ export const ui: Record<Locale, Record<string, string>> = {
   },
   en: {
     site_name: "Articles — Tiago Cosmai",
+    blog_title: "Blog",
     theme_to_light: "Switch to light theme",
     theme_to_dark: "Switch to dark theme",
     search_label: "Search",
@@ -103,7 +105,7 @@ export const ui: Record<Locale, Record<string, string>> = {
     not_found_body: "This article does not exist or was removed.",
     back_home: "Back to home",
     back_blog: "Back to the blog",
-    share_intro: "Look at this great article I found...",
+    share_intro: "I found this on Tiago Cosmai's blog:",
     share_label: "Share",
     share_linkedin: "Share on LinkedIn",
     share_whatsapp: "Share on WhatsApp",
@@ -157,6 +159,7 @@ export const ui: Record<Locale, Record<string, string>> = {
   },
   es: {
     site_name: "Artículos — Tiago Cosmai",
+    blog_title: "Blog",
     theme_to_light: "Cambiar al tema claro",
     theme_to_dark: "Cambiar al tema oscuro",
     search_label: "Búsqueda",
@@ -180,7 +183,7 @@ export const ui: Record<Locale, Record<string, string>> = {
     not_found_body: "Este artículo no existe o fue eliminado.",
     back_home: "Volver al inicio",
     back_blog: "Volver al blog",
-    share_intro: "Mira este artículo buenísimo que encontré...",
+    share_intro: "Encontré esto en el blog de Tiago Cosmai:",
     share_label: "Compartir",
     share_linkedin: "Compartir en LinkedIn",
     share_whatsapp: "Compartir en WhatsApp",
