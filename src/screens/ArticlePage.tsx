@@ -38,6 +38,7 @@ export function ArticlePage({ content }: { content: LoadedContent }) {
   const filename = article.locales[locale].markdown;
   const markdown = content.markdown[filename];
   const cards = content.flashcards[filename.replace(/\.md$/, ".json")];
+  const title = article.locales[locale].title || article.slug;
   const tagClass =
     mode === "dark"
       ? "border-brand/40 text-brand"
@@ -124,6 +125,10 @@ export function ArticlePage({ content }: { content: LoadedContent }) {
             <span aria-hidden="true">←</span>
             {t("back_blog")}
           </BlogLink>
+          <header className="flex flex-col gap-2">
+            <h1 className="text-2xl font-bold">{title}</h1>
+            <p className="text-lg opacity-80">{article.locales[locale].description}</p>
+          </header>
           <header className="flex items-center justify-between gap-3">
             <time dateTime={article.date} className="text-sm opacity-80">
               {formatArticleDate(article.date, locale)}
@@ -136,7 +141,6 @@ export function ArticlePage({ content }: { content: LoadedContent }) {
                 description={article.locales[locale].description}
                 date={article.date}
                 markdown={typeof markdown === "string" ? markdown : ""}
-                linkedInMessage={content.linkedinPosts[article.slug]?.[locale]}
               />
             </div>
           </header>

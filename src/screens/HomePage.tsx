@@ -5,9 +5,11 @@ import { ArticleList } from "../components/ArticleList";
 import { BlogColumns } from "../components/BlogColumns";
 import { collectTags } from "../content/filterArticles";
 import { repeatArticles } from "../content/listArticles";
+import { useLocale } from "../context/LocaleContext";
 import type { LoadedContent } from "../types/content";
 
 export function HomePage({ content }: { content: LoadedContent }) {
+  const { t } = useLocale();
   const [searchParams] = useSearchParams();
   const [query, setQuery] = useState(() => searchParams.get("q") ?? "");
   const [dateFrom, setDateFrom] = useState(() => searchParams.get("from") ?? "");
@@ -28,22 +30,27 @@ export function HomePage({ content }: { content: LoadedContent }) {
   const items = repeatArticles(content.articles, 1);
 
   return (
-    <BlogColumns
-      content={<ArticleList items={items} filters={{ query, dateFrom, dateTo, tags }} />}
-      filters={
-        <ArticleFilters
-          articles={content.articles}
-          query={query}
-          dateFrom={dateFrom}
-          dateTo={dateTo}
-          selectedTags={tags}
-          availableTags={collectTags(content.articles)}
-          onQueryChange={setQuery}
-          onDateFromChange={setDateFrom}
-          onDateToChange={setDateTo}
-          onToggleTag={toggleTag}
-        />
-      }
-    />
+    <>
+      <h1 className="mb-8 text-3xl font-bold leading-tight md:text-4xl">
+        {t("blog_title")}
+      </h1>
+      <BlogColumns
+        content={<ArticleList items={items} filters={{ query, dateFrom, dateTo, tags }} />}
+        filters={
+          <ArticleFilters
+            articles={content.articles}
+            query={query}
+            dateFrom={dateFrom}
+            dateTo={dateTo}
+            selectedTags={tags}
+            availableTags={collectTags(content.articles)}
+            onQueryChange={setQuery}
+            onDateFromChange={setDateFrom}
+            onDateToChange={setDateTo}
+            onToggleTag={toggleTag}
+          />
+        }
+      />
+    </>
   );
 }

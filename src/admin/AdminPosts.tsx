@@ -51,6 +51,9 @@ export function AdminPosts() {
   const [form, setForm] = useState<FormState | null>(null);
   const [saveError, setSaveError] = useState(false);
   const [rowError, setRowError] = useState<string | null>(null);
+  const [sitemapBusy, setSitemapBusy] = useState(false);
+  const [sitemapMessage, setSitemapMessage] = useState<string | null>(null);
+  const [sitemapError, setSitemapError] = useState<string | null>(null);
   const [importErrors, setImportErrors] = useState<string[] | null>(null);
   const [importConflict, setImportConflict] = useState<{ markdown: string; slug: string } | null>(null);
   const fileInputId = "admin-import-markdown";
@@ -97,6 +100,8 @@ export function AdminPosts() {
     });
     setSaveError(false);
     setForm(null);
+    const previousState = posts?.find((post) => post.id === body.post.id)?.state;
+    if (previousState === "live" || body.post.state === "live") void refreshSitemap();
   }
 
   async function runImport(markdown: string, action?: "create" | "update" | "cancel") {
@@ -132,6 +137,7 @@ export function AdminPosts() {
         if (index === -1) return [...current, body.post];
         return current.map((item) => (item.id === body.post.id ? body.post : item));
       });
+      if (body.post.state === "live") void refreshSitemap();
     }
   }
 
@@ -148,6 +154,38 @@ export function AdminPosts() {
     const body = (await response.json()) as { post: AdminPost };
     setRowError(null);
     setPosts((current) => current?.map((item) => (item.id === body.post.id ? body.post : item)) ?? null);
+    if (post.state === "live" || body.post.state === "live") void refreshSitemap();
+  }
+
+  async function refreshSitemap() {
+    setSitemapBusy(true);
+    setSitemapMessage(null);
+    setSitemapError(null);
+    try {
+      const response = await fetch("/api/admin/sitemap", { method: "POST" });
+      const body = (await response.json()) as { updated?: boolean; urlCount?: number; error?: string };
+      if (!response.ok) {
+        if (body.error === "token_missing") {
+          setSitemapError("Configure SITEMAP_GITHUB_TOKEN no serviço Articles para atualizar o sitemap.");
+        } else if (body.error === "branch_changed") {
+          setSitemapError("A branch do Portfólio mudou durante a atualização. Tente novamente.");
+        } else if (body.error === "snapshot_changed") {
+          setSitemapError("Os posts mudaram durante a atualização. Tente atualizar o sitemap novamente.");
+        } else {
+          setSitemapError("Não foi possível atualizar. Confira o token do GitHub e tente novamente.");
+        }
+        return;
+      }
+      setSitemapMessage(
+        body.updated
+          ? `Sitemap atualizado com ${body.urlCount} URLs; o deploy do Portfólio foi acionado.`
+          : `O sitemap já estava atualizado (${body.urlCount} URLs).`,
+      );
+    } catch {
+      setSitemapError("Não foi possível atualizar o sitemap. Tente novamente.");
+    } finally {
+      setSitemapBusy(false);
+    }
   }
 
   if (loadError) return <p>Não foi possível carregar.</p>;
@@ -237,6 +275,9 @@ export function AdminPosts() {
   return (
     <section>
       <div className="mb-4 flex flex-wrap gap-3">
+        <button type="button" onClick={() => void refreshSitemap()} disabled={sitemapBusy}>
+          {sitemapBusy ? "Atualizando sitemap…" : "Atualizar sitemap"}
+        </button>
         <button
           type="button"
           onClick={() => {
@@ -262,6 +303,19 @@ export function AdminPosts() {
           }}
         />
       </div>
+      {sitemapMessage ? (
+        <p role="status" className="mb-4">
+          {sitemapMessage}{" "}
+          <a href="https://tiagocosmai.github.io/sitemap.xml" target="_blank" rel="noreferrer">
+            Ver sitemap
+          </a>
+        </p>
+      ) : null}
+      {sitemapError ? (
+        <p role="alert" className="mb-4">
+          {sitemapError}
+        </p>
+      ) : null}
       {importErrors ? (
         <div role="alert">
           <p>O arquivo não pôde ser importado:</p>

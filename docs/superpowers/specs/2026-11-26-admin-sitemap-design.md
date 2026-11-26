@@ -1,0 +1,9 @@
+# Admin sitemap refresh
+
+The Articles admin gets an **Atualizar sitemap** action. It builds a sitemap from the currently public database catalog, including the portfolio home and language pages, blog indexes, CV pages, and each published article in Portuguese, English, and Spanish.
+
+The action publishes `public/sitemap.xml` and a generated article metadata catalog to the default branch of `tiagocosmai/portifolio` in one GitHub commit. The Portifolio build uses the generated catalog as its current public article list so new live article URLs receive static share pages and hidden, incomplete, or future-dated articles are omitted. Before the first refresh it falls back to the checked-in Articles catalog. The existing `public/robots.txt` names the sitemap. The commit triggers the existing GitHub Pages deployment workflow.
+
+Only administrators can invoke the admin endpoint. GitHub credentials remain server-side in `SITEMAP_GITHUB_TOKEN`; use a fine-grained token limited to `tiagocosmai/portifolio` with Contents read/write permission. Admin post changes refresh the sitemap automatically, and the admin also offers a manual refresh button. A daily Vercel Cron refresh catches scheduled posts as their publication dates arrive. Repeated refreshes with no content changes do not create commits. The admin shows the number of URLs and whether a commit was created.
+
+The sitemap contains absolute canonical URLs for `https://tiagocosmai.github.io`. Hidden, incomplete, and future-dated articles are excluded using the same public catalog logic as the site. If the database catalog or branch changes during an update, the server retries with a fresh snapshot up to three times and never force-pushes. Existing admin post publishing behavior remains unchanged; sitemap refresh follows publishing, runs daily for date-based scheduled posts, and can also be triggered manually.
